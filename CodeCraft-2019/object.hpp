@@ -128,7 +128,7 @@ class GRAPH
      * @param speed 
      * @return route_type* 
      */
-    route_type* get_least_cost_route(CROSS::id_type from, CROSS::id_type to, CAR::speed_type speed);
+    route_type & get_least_cost_route(CROSS::id_type from, CROSS::id_type to, CAR::speed_type speed);
 
 
   private:
