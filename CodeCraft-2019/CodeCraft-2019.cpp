@@ -4,7 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <limits>   // std::numeric_limits
-
+#include <string>
 #include <chrono>   // speed test
 
 #include "object.hpp"
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 /* SDK code */
     cout << "Begin" << endl;
 
-    if(argc < 5){
+	if(argc < 5){
         cout << "please input args: carPath, roadPath, crossPath, answerPath" << endl;
         exit(1);
     }
@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     string roadPath(argv[2]);
     string crossPath(argv[3]);
     string answerPath(argv[4]);
-
     cout << "carPath is " << carPath << endl;
     cout << "roadPath is " << roadPath << endl;
     cout << "crossPath is " << crossPath << endl;
