@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <string>
 #include <queue>
 #include <algorithm>
-#include <limits>   // std::numeric_limits
 
 #include <chrono>   // speed test
 
@@ -81,27 +81,32 @@ int main(int argc, char *argv[])
 
 
   /* Read cross configuration, mainly to get the number of cross */
-    fptr = fopen(crossPath.c_str(), "r");
-    if (fptr == NULL) {
-        cout << "can't open cross configuration file: " << roadPath << endl;
-        exit(-1);
-    }
-    int cross_count = 0;
-    /* 逐行读取信息 */
-    fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
-    while (fgets(line_buffer, 50, fptr)) {
-        //if(line_buffer[0] == '(') {
-            cross_count ++;
-        //}
-    }
-    fclose(fptr);
+    // fptr = fopen(crossPath.c_str(), "r");
+    // if (fptr == NULL) {
+    //     cout << "can't open cross configuration file: " << roadPath << endl;
+    //     exit(-1);
+    // }
+    // int cross_count = 0;
+    // /* 逐行读取信息 */
+    // fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
+    // while (fgets(line_buffer, 50, fptr)) {
+    //     //if(line_buffer[0] == '(') {
+    //         cross_count ++;
+    //     //}
+    // }
+    // fclose(fptr);
   /* End of Read cross configuration */
 
 
 
   /* Read road configuration, and build GRAPH at the same time */
-    vector<ROAD*> road_vec;
-    road_vec.reserve(ROAD_VECTOR_RESERVE_SIZE);
+    //vector<ROAD*> road_vec;
+    //road_vec.reserve(ROAD_VECTOR_RESERVE_SIZE);
+    map<ROAD::id_type, ROAD*> road_map;
+
+    GRAPH graph;
+
+    int test_road_id, length, max_speed, channel, from, to, isDuplex;
 
     fptr = fopen(roadPath.c_str(), "r");
     if (fptr == NULL) {
@@ -109,18 +114,15 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    CROSS::id_type from, to;
-    bool isDuplex;
-
     /* 逐行读取道路信息 */
     fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
     while (fgets(line_buffer, 50, fptr)) {
         //if(line_buffer[0] == '(') {
-            auto pRoad = new ROAD;
-            sscanf(line_buffer, "(%d, %d, %d, %d, %d, %d, %d)",
-                &(pRoad->id), &(pRoad->length), &(pRoad->max_speed), &(pRoad->channel), 
-                &from, &to, &isDuplex);
-            road_vec.push_back(pRoad);
+            sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &test_road_id, &length, &max_speed, &channel, &from, &to, &isDuplex);
+            auto pRoad = new ROAD(test_road_id, length, max_speed, channel);
+            graph.add_node(test_road_id, from, to, pRoad->capacity, isDuplex);
+            //road_vec.push_back(pRoad);
+            road_map[test_road_id] = pRoad;
         //}
     }
     fclose(fptr);
