@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build project",
+            "type": "shell",
+            "command": "g++-6",
+            "args": [
+                "-O0",
+                "-Wall",
+                "-g",
+                "-ggdb",
+                "-std=c++11",
+                "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
+                "-o",
+                "${workspaceFolder}/bin/CodeCraft-2019"
+            ]
+        }
+    ]
+}

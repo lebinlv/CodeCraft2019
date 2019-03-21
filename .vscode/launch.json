@@ -1,0 +1,26 @@
+{
+    // 使用 IntelliSense 了解相关属性。
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/CodeCraft-2019",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "${workspaceFolder}/config_train_1/car.txt",
+                //"${workspaceFolder}/test.txt",
+                // "${workspaceFolder}/test.1.txt",
+                // "${workspaceFolder}/test.2.txt",
+                // "${workspaceFolder}/test.3.txt"
+                "${workspaceFolder}/config_train_1/road.txt",
+                "${workspaceFolder}/config_train_1/cross.txt",
+                "${workspaceFolder}/config_train_1/answer.txt"
+            ],
+            "preLaunchTask": "build project"
+        }
+    ]
+}
