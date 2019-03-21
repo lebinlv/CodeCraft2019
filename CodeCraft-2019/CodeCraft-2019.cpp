@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
     CROSS::id_type from, to;
     bool isDuplex;
 
+	//(5000, 15, 6, 2, 1, 2, 1)
     /* 逐行读取道路信息 */
     fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
     while (fgets(line_buffer, 50, fptr)) {
