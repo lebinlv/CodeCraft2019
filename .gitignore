@@ -1,4 +1,4 @@
-bin/
+# folder
 build/
 config/
 config_1/
@@ -11,10 +11,10 @@ config_7/
 config_8/
 config_9/
 config_10/
-config_train_1/
-config_train_2/
+.vscode/ipch/
 
-
+# file
+bin/CodeCraft-2019
 CodeCraft-code.tar.gz
 test_bk.txt
 test.1.txt
