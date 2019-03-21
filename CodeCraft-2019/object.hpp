@@ -144,7 +144,7 @@ class GRAPH
 
 		__Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent) :
 			cost(_cost), cross_id(_cross_id), parent(_parent) {}
-        ~__Node(){delete parent;}
+        ~__Node(){}
 
 		struct Compare {};
     };
