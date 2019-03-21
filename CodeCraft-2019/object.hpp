@@ -141,9 +141,10 @@ class GRAPH
         CROSS::id_type    cross_id;
 
         __Node *       parent;
+		Node*          p_Node;
 
-		__Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent) :
-			cost(_cost), cross_id(_cross_id), parent(_parent) {}
+		__Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent, Node* _p_Node) :
+			cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node) {}
         ~__Node(){}
 
 		struct Compare {};
