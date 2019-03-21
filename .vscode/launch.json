@@ -12,13 +12,26 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "${workspaceFolder}/config_train_1/car.txt",
-                //"${workspaceFolder}/test.txt",
-                // "${workspaceFolder}/test.1.txt",
-                // "${workspaceFolder}/test.2.txt",
-                // "${workspaceFolder}/test.3.txt"
                 "${workspaceFolder}/config_train_1/road.txt",
                 "${workspaceFolder}/config_train_1/cross.txt",
                 "${workspaceFolder}/config_train_1/answer.txt"
+            ],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "windows": {
+                "miDebuggerPath": "C:/mingw-w64/bin/gdb.exe"
+            },
+            "linux": {
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
             ],
             "preLaunchTask": "build project"
         }

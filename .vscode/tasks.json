@@ -4,7 +4,8 @@
         {
             "label": "build project",
             "type": "shell",
-            "command": "g++-6",
+            "windows": {"command": "g++"},
+            "linux": {"command": "g++-6"},
             "args": [
                 "-O0",
                 "-Wall",
@@ -12,6 +13,22 @@
                 "-ggdb",
                 "-std=c++11",
                 "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
+                "${workspaceFolder}/CodeCraft-2019/object.cpp",
+                "-o",
+                "${workspaceFolder}/bin/CodeCraft-2019"
+            ]
+        },
+        {
+            "label": "Release",
+            "type": "shell",
+            "windows": {"command": "g++"},
+            "linux": {"command": "g++-6"},
+            "args": [
+                "-O3",
+                "-Wall",
+                "-std=c++11",
+                "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
+                "${workspaceFolder}/CodeCraft-2019/object.cpp",
                 "-o",
                 "${workspaceFolder}/bin/CodeCraft-2019"
             ]

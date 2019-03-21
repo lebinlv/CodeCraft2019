@@ -1,6 +1,23 @@
 {
     "configurations": [
         {
+            "name": "MINGW",
+            "includePath": [
+                "C:/mingw-w64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++",
+                "C:/mingw-w64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32",
+                "${workspaceFolder}/CodeCraft-2019/lib"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/mingw-w64/bin/g++.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/CodeCraft-2019/lib"
