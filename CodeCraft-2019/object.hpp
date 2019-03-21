@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <vector>      // 寻路函数返回vector
-#include <queue>       // 寻路算法中使用 priority_queue
 #include <map>         // 权重字典
 
 struct CROSS
@@ -77,21 +76,21 @@ class GRAPH
 {
   public:
     typedef double                    weight_type;  // 边的权重的数据类型
-    typedef uint16_t                  idx_type;     // 下标类型
-    typedef vector<CROSS::id_type>    route_type;   // 寻最短路函数的返回数据类型
+    typedef uint16_t                  idx_type;     // 下标的数据类型,根据边的数目确定
+    typedef std::vector<CROSS::id_type>    route_type;   // 寻最短路函数的返回数据类型
 
     struct Node{
         CROSS::id_type       cross_id;        // 本节点代表的路口的id
         ROAD::id_type        road_id;         // 到达本节点的路的id
         //weight_type          weight;          // 到达本节点的路的权重
-        idx_type             wieght_idx;      // 到达该节点的边的权重在权重数组中的下标
+        idx_type             weight_idx;      // 到达该节点的边的权重 在权重数组中的下标
+        idx_type             capacity_idx;    // 到达该节点的边的容量 在容量数组中的下标
 
-        Node* next_node = nullptr;
 
-        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id) : 
-             cross_id(_cross_id), road_id(_road_id) {wieght_idx = node_count++;}
-        //Node(){}
-        ~Node(){delete next_node;}
+        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id) : cross_id(_cross_id), road_id(_road_id){
+            weight_idx = capacity_idx = node_count++;
+        }
+        ~Node(){}
 
       private:
         static idx_type      node_count;      // 静态变量用于统计节点个数，初始值为0
@@ -107,8 +106,11 @@ class GRAPH
      * @param from     道路起点路口id
      * @param to       道路终点路口id
      * @param isDuplex 是否双向
+     * 
+     * @attention 此函数并不检查 road_id 是否重复
      */
-    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to, bool isDuplex);
+    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to,
+                  ROAD::capacity_type capacity, bool isDuplex);
 
     /**
      * @brief 根据车速计算新的权重数组
@@ -130,8 +132,9 @@ class GRAPH
 
 
   private:
-    map<CAR::speed_type, weight_type*>  weight_map;  // 边对于不同速度的车，具有不同的权重
-    map<CROSS::id_type, Node*>          graph_map;   //
+    std::map<CAR::speed_type, weight_type*>         weight_map;  // 边对于不同速度的车，具有不同的权重
+    std::map<CROSS::id_type, std::vector<Node*> >   graph_map;   //
+    std::vector<ROAD::capacity_type>                capacity_vec;// 
 
 
     weight_type*                        p_weight;    // 每次计算最短路径之前，根据车速重定向该指针
@@ -141,10 +144,17 @@ class GRAPH
         CROSS::id_type    cross_id;
 
         __Node *       parent;
+         Node *        p_Node;
 
-        __Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent) :
-               cost(_cost), cross_id(_cross_id), parent(_parent){}
+        __Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent, Node* _p_Node) :
+               cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
         ~__Node(){delete parent;}
+
+        struct Compare{
+            bool operator()(const __Node* a, const __Node* b){
+                return a->cost > b->cost;
+            }
+        };
     };
 
 };
