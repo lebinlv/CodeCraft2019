@@ -7,7 +7,7 @@
 
 #include <chrono>   // speed test
 
-#include "object.hpp"
+#include "lib/object.hpp"
 
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
 #define CAR_VECTOR_RESERVE_SIZE    11000   // 
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
     GRAPH graph;
 
-    int test_road_id, length, max_speed, channel, from, to, isDuplex;
+    int road_id, length, max_speed, channel, from, to, isDuplex;
 
     fptr = fopen(roadPath.c_str(), "r");
     if (fptr == NULL) {
@@ -118,11 +118,11 @@ int main(int argc, char *argv[])
     fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
     while (fgets(line_buffer, 50, fptr)) {
         //if(line_buffer[0] == '(') {
-            sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &test_road_id, &length, &max_speed, &channel, &from, &to, &isDuplex);
-            auto pRoad = new ROAD(test_road_id, length, max_speed, channel);
-            graph.add_node(test_road_id, from, to, pRoad->capacity, isDuplex);
+            sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &road_id, &length, &max_speed, &channel, &from, &to, &isDuplex);
+            auto pRoad = new ROAD(road_id, length, max_speed, channel);
+            graph.add_node(road_id, from, to, pRoad->capacity, isDuplex);
             //road_vec.push_back(pRoad);
-            road_map[test_road_id] = pRoad;
+            road_map[road_id] = pRoad;
         //}
     }
     fclose(fptr);
