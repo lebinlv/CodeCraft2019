@@ -1,18 +1,16 @@
 #include <iostream>
 #include <cstdio>
-#include <vector>
 #include <string>
-#include <queue>
-#include <algorithm>
 
 #include <chrono>   // speed test
 
 #include "lib/object.hpp"
 
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
-#define CAR_VECTOR_RESERVE_SIZE    11000   // 
+#define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预留空间
 #define ROAD_VECTOR_RESERVE_SIZE   150 
-#define USE_CXX_SSTREAM 0
+#define USE_CXX_SSTREAM            0
+#define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
 
 using namespace std;
 
@@ -47,6 +45,7 @@ int main(int argc, char *argv[])
     //priority_queue<CAR *, vector<CAR *>, CAR::Compare> car_pri_queue; // 建立 priority queue 将所有车辆信息保存
     vector<CAR*> car_vec;
     car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
+    uint8_t car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {0};    // 
 
     fptr = fopen(carPath.c_str(), "r");
     if (fptr == NULL) {
@@ -120,7 +119,7 @@ int main(int argc, char *argv[])
         //if(line_buffer[0] == '(') {
             sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &road_id, &length, &max_speed, &channel, &from, &to, &isDuplex);
             auto pRoad = new ROAD(road_id, length, max_speed, channel);
-            graph.add_node(road_id, from, to, pRoad->capacity, isDuplex);
+            graph.add_node(road_id, from, to, max_speed, pRoad->capacity, isDuplex);
             //road_vec.push_back(pRoad);
             road_map[road_id] = pRoad;
         //}
@@ -131,6 +130,7 @@ int main(int argc, char *argv[])
 
 /* END of read configuration from file */
 
+    auto tem_vec = graph.get_least_cost_route(car_vec[0]->from, car_vec[0]->to, car_vec[0]->speed);
 
     /* TODO:process */
 
