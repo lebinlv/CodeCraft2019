@@ -42,10 +42,11 @@ int main(int argc, char *argv[])
     char line_buffer[MAXIMUM_LENGTH_PER_LINE];
 
   /* Read car configuration */
-    //priority_queue<CAR *, vector<CAR *>, CAR::Compare> car_pri_queue; // 建立 priority queue 将所有车辆信息保存
     vector<CAR*> car_vec;
     car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
-    uint8_t car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {0};    // 
+    bool car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {false};    // 
+
+    int id, from, to, speed, plan_time;
 
     fptr = fopen(carPath.c_str(), "r");
     if (fptr == NULL) {
@@ -58,11 +59,9 @@ int main(int argc, char *argv[])
     fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
     while (fgets(line_buffer, 50, fptr)) {
         //if(line_buffer[0] == '(') {
-            auto pCar = new CAR;
-            sscanf(line_buffer, "(%d, %d, %d, %d, %d)",
-                   &(pCar->id), &(pCar->from), &(pCar->to), &(pCar->speed), &(pCar->plan_time));
-            //car_pri_queue.push(pCar);
-            car_vec.push_back(pCar);
+            sscanf(line_buffer, "(%d, %d, %d, %d, %d)",&id, &from, &to, &speed, &plan_time);
+            car_vec.push_back(new CAR(id, from, to, speed, plan_time));
+            car_speed_detect_array[speed] = true;
         //}
     }
     fclose(fptr);
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
 
     GRAPH graph(ROAD_VECTOR_RESERVE_SIZE);
 
-    int road_id, length, max_speed, channel, from, to, isDuplex;
+    int length, channel, isDuplex;
 
     fptr = fopen(roadPath.c_str(), "r");
     if (fptr == NULL) {
@@ -117,11 +116,11 @@ int main(int argc, char *argv[])
     fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
     while (fgets(line_buffer, 50, fptr)) {
         //if(line_buffer[0] == '(') {
-            sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &road_id, &length, &max_speed, &channel, &from, &to, &isDuplex);
-            auto pRoad = new ROAD(road_id, length, max_speed, channel);
-            graph.add_node(road_id, from, to, max_speed, pRoad->capacity, isDuplex);
+            sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &id, &length, &speed, &channel, &from, &to, &isDuplex);
+            auto pRoad = new ROAD(id, length, speed, channel);
+            graph.add_node(id, from, to, speed, pRoad->capacity, isDuplex);
             //road_vec.push_back(pRoad);
-            road_map[road_id] = pRoad;
+            road_map.insert(pair<ROAD::id_type, ROAD*>(id, pRoad));
         //}
     }
     fclose(fptr);
