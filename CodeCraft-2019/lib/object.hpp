@@ -96,13 +96,12 @@ class GRAPH
         }
         ~Node(){}
 
-      private:
         static idx_type      node_count;      // 静态变量用于统计节点个数，初始值为0
     };
 
     typedef std::vector<Node *> route_type; // 寻最短路函数的返回数据类型
 
-    GRAPH(){}
+    GRAPH(int reserve_road_count){}
     ~GRAPH(){}
 
     /**
@@ -154,7 +153,7 @@ class GRAPH
 
         __Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent, Node* _p_Node) :
                cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
-        ~__Node(){delete parent;}
+        ~__Node(){}
 
         struct Compare{
             bool operator()(const __Node* a, const __Node* b){
