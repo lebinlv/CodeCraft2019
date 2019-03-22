@@ -1,4 +1,4 @@
-#include "object.hpp"
+#include "lib/object.hpp"
 
 #include <queue> // 寻路算法中使用 priority_queue
 
