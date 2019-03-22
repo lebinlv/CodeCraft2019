@@ -7,8 +7,8 @@
 #include "lib/object.hpp"
 
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
-#define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预留空间
-#define ROAD_VECTOR_RESERVE_SIZE   150 
+#define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预分配空间
+#define ROAD_VECTOR_RESERVE_SIZE   150     // 保存道路的容量信息的vector的预分配空间（考虑双向），假设图包含n*n个路口，则设置为 2n(n-1)
 #define USE_CXX_SSTREAM            0
 #define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     //road_vec.reserve(ROAD_VECTOR_RESERVE_SIZE);
     map<ROAD::id_type, ROAD*> road_map;
 
-    GRAPH graph;
+    GRAPH graph(ROAD_VECTOR_RESERVE_SIZE);
 
     int road_id, length, max_speed, channel, from, to, isDuplex;
 

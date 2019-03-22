@@ -101,8 +101,8 @@ class GRAPH
 
     typedef std::vector<Node *> route_type; // 寻最短路函数的返回数据类型
 
-    GRAPH(int reserve_road_count){}
-    ~GRAPH(){}
+    GRAPH(int reserve_road_count);
+    ~GRAPH();
 
     /**
      * @brief 根据道路信息添加节点
@@ -131,7 +131,7 @@ class GRAPH
      * @param from 
      * @param to 
      * @param speed 
-     * @return route_type* 
+     * @return route_type& 返回 vector<Node *>，如果失败则vector为空，如果成功，逆序遍历此vector便可得到路径
      */
     route_type & get_least_cost_route(CROSS::id_type from, CROSS::id_type to, CAR::speed_type speed);
 
@@ -148,8 +148,8 @@ class GRAPH
         weight_type       cost;
         CROSS::id_type    cross_id;
 
-        __Node *       parent;
-         Node *        p_Node;
+        __Node *          parent;   // 用于到达终点时回溯得到路径
+        Node *            p_Node;
 
         __Node(weight_type _cost, CROSS::id_type _cross_id, __Node* _parent, Node* _p_Node) :
                cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
