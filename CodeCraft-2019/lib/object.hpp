@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>      // 寻路函数返回vector
 #include <map>         // 权重字典
+#include <queue>
+#include <algorithm>
 
 struct CROSS
 {
@@ -77,24 +79,28 @@ class GRAPH
   public:
     typedef double                    weight_type;  // 边的权重的数据类型
     typedef uint16_t                  idx_type;     // 下标的数据类型,根据边的数目确定
-    typedef std::vector<CROSS::id_type>    route_type;   // 寻最短路函数的返回数据类型
 
     struct Node{
         CROSS::id_type       cross_id;        // 本节点代表的路口的id
         ROAD::id_type        road_id;         // 到达本节点的路的id
+        ROAD::speed_type     max_speed;       // 到达本节点的路的最大速度
         //weight_type          weight;          // 到达本节点的路的权重
-        idx_type             weight_idx;      // 到达该节点的边的权重 在权重数组中的下标
-        idx_type             capacity_idx;    // 到达该节点的边的容量 在容量数组中的下标
+        //idx_type             weight_idx;      // 到达该节点的边的权重 在权重数组中的下标
+        //idx_type             capacity_idx;    // 到达该节点的边的容量 在容量数组中的下标
+        idx_type             info_idx;        // 权重和容量信息均通过info_idx访问
 
 
-        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id) : cross_id(_cross_id), road_id(_road_id){
-            weight_idx = capacity_idx = node_count++;
+        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id, ROAD::speed_type _speed) : 
+             cross_id(_cross_id), road_id(_road_id), max_speed(_speed){
+            info_idx = node_count++;
         }
         ~Node(){}
 
       private:
         static idx_type      node_count;      // 静态变量用于统计节点个数，初始值为0
     };
+
+    typedef std::vector<Node *> route_type; // 寻最短路函数的返回数据类型
 
     GRAPH(){}
     ~GRAPH(){}
@@ -109,7 +115,7 @@ class GRAPH
      * 
      * @attention 此函数并不检查 road_id 是否重复
      */
-    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to,
+    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to, ROAD::speed_type speed,
                   ROAD::capacity_type capacity, bool isDuplex);
 
     /**
