@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     char line_buffer[MAXIMUM_LENGTH_PER_LINE];
 
   /* Read car configuration */
-    vector<CAR*> car_vec;
+    vector<CAR*> car_vec;             // attention: you should delete CAR* manually!!!
     car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
     bool car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {false};    // 
 
@@ -77,30 +77,10 @@ int main(int argc, char *argv[])
   /* End of read car configuration */
 
 
-
-  /* Read cross configuration, mainly to get the number of cross */
-    // fptr = fopen(crossPath.c_str(), "r");
-    // if (fptr == NULL) {
-    //     cout << "can't open cross configuration file: " << roadPath << endl;
-    //     exit(-1);
-    // }
-    // int cross_count = 0;
-    // /* 逐行读取信息 */
-    // fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
-    // while (fgets(line_buffer, 50, fptr)) {
-    //     //if(line_buffer[0] == '(') {
-    //         cross_count ++;
-    //     //}
-    // }
-    // fclose(fptr);
-  /* End of Read cross configuration */
-
-
-
   /* Read road configuration, and build GRAPH at the same time */
+    map<int, ROAD*> road_map;       // attention: you should delete ROAD* manually!!!
     //vector<ROAD*> road_vec;
     //road_vec.reserve(ROAD_VECTOR_RESERVE_SIZE);
-    map<ROAD::id_type, ROAD*> road_map;
 
     GRAPH graph(NODE_VECTOR_RESERVE_SIZE);
 
@@ -117,14 +97,14 @@ int main(int argc, char *argv[])
     while (fgets(line_buffer, 50, fptr)) {
         //if(line_buffer[0] == '(') {
             sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &id, &length, &speed, &channel, &from, &to, &isDuplex);
-            auto pRoad = new ROAD(id, length, speed, channel);
-            graph.add_node(id, from, to, length, speed, pRoad->capacity, isDuplex);
+            auto pRoad = new ROAD(id, length, speed, channel, from, to, isDuplex);
+            graph.add_node(pRoad);
             //road_vec.push_back(pRoad);
-            road_map.insert(pair<ROAD::id_type, ROAD*>(id, pRoad));
+            road_map.insert(pair<int, ROAD*>(id, pRoad));
         //}
     }
     fclose(fptr);
-    graph.update_weights(car_speed_detect_array, MAXIMUM_ROAD_LENGTH);
+    graph.add_weights(car_speed_detect_array, MAXIMUM_ROAD_LENGTH);
 
   /*End of read road configuration */
 
@@ -140,5 +120,12 @@ int main(int argc, char *argv[])
 
     /* End of write out file */
 
+
+/* free memory */
+    /* delete CAR* */
+    for_each(car_vec.begin(), car_vec.end(), [](CAR* pCar)->void{delete pCar;});
+    /* delete ROAD* */
+    for_each(road_map.begin(), road_map.end(), [](const pair<int, ROAD*> & val)->void{delete val.second;});
+/* End of free memory */
     return 0;
 }
