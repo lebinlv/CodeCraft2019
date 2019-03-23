@@ -8,7 +8,7 @@
 
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
 #define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预分配空间
-#define ROAD_VECTOR_RESERVE_SIZE   150     // 保存道路的容量信息的vector的预分配空间（考虑双向），假设图包含n*n个路口，则设置为 2n(n-1)
+#define NODE_VECTOR_RESERVE_SIZE   360     // 预计边的数量（考虑双向），假设图包含n*n个路口，则设置为 4n(n-1)
 #define USE_CXX_SSTREAM            0
 #define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     //road_vec.reserve(ROAD_VECTOR_RESERVE_SIZE);
     map<ROAD::id_type, ROAD*> road_map;
 
-    GRAPH graph(ROAD_VECTOR_RESERVE_SIZE);
+    GRAPH graph(NODE_VECTOR_RESERVE_SIZE);
 
     int length, channel, isDuplex;
 
@@ -118,12 +118,13 @@ int main(int argc, char *argv[])
         //if(line_buffer[0] == '(') {
             sscanf(line_buffer,"(%d, %d, %d, %d, %d, %d, %d)", &id, &length, &speed, &channel, &from, &to, &isDuplex);
             auto pRoad = new ROAD(id, length, speed, channel);
-            graph.add_node(id, from, to, speed, pRoad->capacity, isDuplex);
+            graph.add_node(id, from, to, length, speed, pRoad->capacity, isDuplex);
             //road_vec.push_back(pRoad);
             road_map.insert(pair<ROAD::id_type, ROAD*>(id, pRoad));
         //}
     }
     fclose(fptr);
+    graph.update_weights(car_speed_detect_array, MAXIMUM_ROAD_LENGTH);
 
   /*End of read road configuration */
 
