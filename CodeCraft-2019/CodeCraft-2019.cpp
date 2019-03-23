@@ -110,7 +110,23 @@ int main(int argc, char *argv[])
 
 /* END of read configuration from file */
 
-    auto tem_vec = graph.get_least_cost_route(car_vec[0]->from, car_vec[0]->to, car_vec[0]->speed);
+
+/* 寻路函数测试*/
+    int i=1;
+    while(i<100){
+        i++;
+        auto start = std::chrono::steady_clock::now();
+        auto tem_vec = graph.get_least_cost_route(1,i,2);
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::micro> elapsed = end - start; // std::micro 表示以微秒为时间单位
+
+        std::cout << "time: " << elapsed.count() << "us: ";
+        if(tem_vec.empty()){cout << "not find road!" << endl; continue;}
+        for_each(tem_vec.rbegin(), tem_vec.rend(), [](GRAPH::Node* val)->void{cout<<val->cross_id << ' ';});
+        //tem_vec.front()->capacity -= 10;
+        cout << endl;
+    }
+/* End of 寻路函数测试*/
 
     /* TODO:process */
 
