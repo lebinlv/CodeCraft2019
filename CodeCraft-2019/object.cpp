@@ -17,13 +17,16 @@ GRAPH::Node::Node(int _cross_id, ROAD *_pRoad) : cross_id(_cross_id), pRoad(_pRo
     pRoad_vec.push_back(_pRoad);
 }
 
-GRAPH::GRAPH(int reserve_node_count){
+
+GRAPH::GRAPH(int reserve_node_count)
+{
     p_weight = nullptr;
     Node::pRoad_vec.reserve(reserve_node_count);
 }
 
 
-GRAPH::~GRAPH(){
+GRAPH::~GRAPH()
+{
     // free weigth_map
     for_each(weight_map.begin(), weight_map.end(),
              [](const pair<int, double*> & val)->void{delete val.second;});
@@ -33,6 +36,7 @@ GRAPH::~GRAPH(){
                 for_each(val.second.begin(), val.second.end(), [](Node* node)->void{delete node;});
             });
 }
+
 
 void GRAPH::add_node(ROAD* pRoad)
 {
@@ -92,9 +96,9 @@ GRAPH::route_type & GRAPH::get_least_cost_route(int from, int to, int speed)
     // 创建一个 cost为0， cross_id 为 from， 且 parent 和 p_Node 均为 nullptr 的初始 __Node 节点
     __Node *record = new __Node(0, from, nullptr, nullptr);
 
-    visited_map.insert(pair<int, __Node *>(from, record));   // 将起点标记为已访问
-
     while (record->cross_id != to) {
+        visited_map.insert(pair<int, __Node *>(record->cross_id, record)); // 将当前节点标记为已访问
+
         for (auto node : graph_map[record->cross_id]) {
             // 如果这个节点代表的边没有被访问过 且 边的容量大于0，建立__Node实例, 并把它压入优先队列
             if(visited_map.find(node->cross_id) == visited_map.end() && node->capacity > 0) {
@@ -112,8 +116,6 @@ GRAPH::route_type & GRAPH::get_least_cost_route(int from, int to, int speed)
 
         record = candidates.top();                  // 记录这个队顶节点, 以供回溯使用
         candidates.pop();
-
-        visited_map.insert(pair<int, __Node *>(from, record)); // 将当前节点标记为已访问
     }
 
     // 上面的while循环结束时，record指向目的节点，接下来从record开始回溯，获得完整路径
