@@ -83,25 +83,27 @@ class GRAPH
     struct Node{
         CROSS::id_type       cross_id;        // 本节点代表的路口的id
         ROAD::id_type        road_id;         // 到达本节点的路的id
+        ROAD::length_type    length;          // 到达本节点的路的长度
         ROAD::speed_type     max_speed;       // 到达本节点的路的最大速度
-        //weight_type          weight;          // 到达本节点的路的权重
-        //idx_type             weight_idx;      // 到达该节点的边的权重 在权重数组中的下标
-        //idx_type             capacity_idx;    // 到达该节点的边的容量 在容量数组中的下标
+        ROAD::capacity_type  capacity;        // 到达本节点的边的容量
         idx_type             info_idx;        // 权重和容量信息均通过info_idx访问
 
+        static idx_type node_count;           // 静态变量用于统计节点个数，初始值为0
+        static std::vector<Node *> pNode_vec; // 为了便于计算 weight_map 而添加的vector
 
-        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id, ROAD::speed_type _speed) : 
-             cross_id(_cross_id), road_id(_road_id), max_speed(_speed){
+        Node(CROSS::id_type _cross_id, ROAD::id_type _road_id,
+             ROAD::length_type _length, ROAD::speed_type  _speed, ROAD::capacity_type  _capacity) : 
+             cross_id(_cross_id), road_id(_road_id),
+             length(_length), max_speed(_speed), capacity(_capacity){
             info_idx = node_count++;
+            pNode_vec.push_back(this);
         }
         ~Node(){}
-
-        static idx_type      node_count;      // 静态变量用于统计节点个数，初始值为0
     };
 
     typedef std::vector<Node *> route_type; // 寻最短路函数的返回数据类型
 
-    GRAPH(int reserve_road_count);
+    GRAPH(int reserve_node_count);
     ~GRAPH();
 
     /**
@@ -114,8 +116,8 @@ class GRAPH
      * 
      * @attention 此函数并不检查 road_id 是否重复
      */
-    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to, ROAD::speed_type speed,
-                  ROAD::capacity_type capacity, bool isDuplex);
+    void add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to, ROAD::length_type length,
+                  ROAD::speed_type speed, ROAD::capacity_type capacity, bool isDuplex);
 
     /**
      * @brief 根据车速计算新的权重数组
@@ -124,6 +126,8 @@ class GRAPH
      * @attention   必须在添加所有节点之后调用该函数
      */
     void add_weight_accord_to_speed(CAR::speed_type speed);
+
+    void update_weights(bool speed_detect_array[], int size);
 
     /**
      * @brief Get the least cost route object
@@ -139,7 +143,7 @@ class GRAPH
   private:
     std::map<CAR::speed_type, weight_type*>         weight_map;  // 边对于不同速度的车，具有不同的权重
     std::map<CROSS::id_type, std::vector<Node*> >   graph_map;   //
-    std::vector<ROAD::capacity_type>                capacity_vec;// 
+    //std::vector<ROAD::capacity_type>                capacity_vec;// 
 
 
     weight_type*                        p_weight;    // 每次计算最短路径之前，根据车速重定向该指针
