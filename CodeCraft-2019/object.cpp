@@ -5,69 +5,77 @@ using namespace std;
 
 /********* class GRAPH  *********/
 
-GRAPH::idx_type GRAPH::Node::node_count = 0;
-vector<GRAPH::Node*> GRAPH::Node::pNode_vec;
+int              GRAPH::Node::node_count = 0;
+vector<ROAD *>   GRAPH::Node::pRoad_vec;    //std::vector<Node *>
 
-//GRAPH::weight_type weight[300];   for debug 
+//double weight[300];   //for debug
+
+GRAPH::Node::Node(int _cross_id, ROAD *_pRoad) : cross_id(_cross_id), pRoad(_pRoad)
+{
+    capacity = _pRoad->ini_capacity;
+    info_idx = node_count++;
+    pRoad_vec.push_back(_pRoad);
+}
 
 GRAPH::GRAPH(int reserve_node_count){
     p_weight = nullptr;
-    //capacity_vec.reserve(reserve_road_count);
-    Node::pNode_vec.reserve(reserve_node_count);
+    Node::pRoad_vec.reserve(reserve_node_count);
 }
 
 
 GRAPH::~GRAPH(){
     // free weigth_map
     for_each(weight_map.begin(), weight_map.end(),
-             [](const pair<CAR::speed_type, weight_type*> & val)->void{delete val.second;});
+             [](const pair<int, double*> & val)->void{delete val.second;});
     // free graph_map
+    for_each(graph_map.begin(), graph_map.end(),
+            [](const pair<int, std::vector<Node *> > & val)->void{
+                for_each(val.second.begin(), val.second.end(), [](Node* node)->void{delete node;});
+            });
 }
 
-void GRAPH::add_node(ROAD::id_type road_id, CROSS::id_type from, CROSS::id_type to, ROAD::length_type length,
-                     ROAD::speed_type speed, ROAD::capacity_type capacity, bool isDuplex)
+void GRAPH::add_node(ROAD* pRoad)
 {
-    graph_map[from].push_back(new Node(to, road_id, length, speed, capacity));
-    //capacity_vec.push_back(capacity);
+    graph_map[pRoad->from].push_back(new Node(pRoad->to, pRoad));
 
-    if(isDuplex) {
-        graph_map[to].push_back(new Node(from, road_id, length, speed, capacity));
-        //capacity_vec.push_back(capacity);
+    if(pRoad->isDuplex) {
+        graph_map[pRoad->to].push_back(new Node(pRoad->from, pRoad));
     }
 }
 
 
-void GRAPH::add_weight_accord_to_speed(CAR::speed_type speed)
+void GRAPH::add_weights(int speed)
 {
-    weight_type *p = new weight_type[Node::node_count];
-    //weight_type *p = weight;          // for debug
-    weight_type *p_back = p;
-    for (auto pNode : Node::pNode_vec){
-        *p_back = weight_type(pNode->length) / min(speed, pNode->max_speed);
+    double *p = new double[Node::node_count];
+    //double *p = weight;          // for debug
+    double *p_back = p;
+
+    for (auto pRoad : Node::pRoad_vec){
+        *p_back = double(pRoad->length) / min(speed, pRoad->max_speed);
         p_back++;
     }
-    weight_map.insert(pair<CAR::speed_type, weight_type*>(speed, p));
+    weight_map.insert(pair<int, double*>(speed, p));
 }
 
 
-void GRAPH::update_weights(bool speed_detect_array[], int size)
+void GRAPH::add_weights(bool speed_detect_array[], int size)
 {
     for(int i=0; i<size; i++){
         if(speed_detect_array[i]){
-            weight_type *p = new weight_type[Node::node_count];
-            //weight_type *p = weight;   // for debug
-            weight_type *p_back = p;
-            for(auto pNode : Node::pNode_vec){
-                *p_back = weight_type(pNode->length)/min(ROAD::speed_type(i), pNode->max_speed);
+            double *p = new double[Node::node_count];
+            //double *p = weight;   // for debug
+            double *p_back = p;
+            for(auto pRoad : Node::pRoad_vec){
+                *p_back = double(pRoad->length)/min(i, pRoad->max_speed);
                 p_back++;
             }
-            weight_map.insert(pair<CAR::speed_type, weight_type*>(i, p));
+            weight_map.insert(pair<int, double*>(i, p));
         }
     }
 }
 
 
-GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_type to, CAR::speed_type speed)
+GRAPH::route_type & GRAPH::get_least_cost_route(int from, int to, int speed)
 {
     /**
      * @brief Dijkstra求最短路径
@@ -79,12 +87,12 @@ GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_t
     answer->reserve(ROAD_VECTOR_RESERVE); // 预分配空间
 
     priority_queue<__Node *, vector<__Node *>, __Node::Compare>  candidates;
-    map<CROSS::id_type, __Node *>                                visited_map;  // 记录节点是否被访问过
+    map<int, __Node *>                                           visited_map;  // 记录节点是否被访问过
 
     // 创建一个 cost为0， cross_id 为 from， 且 parent 和 p_Node 均为 nullptr 的初始 __Node 节点
     __Node *record = new __Node(0, from, nullptr, nullptr);
 
-    visited_map.insert(pair<CROSS::id_type, __Node *>(from, record));   // 将起点标记为已访问
+    visited_map.insert(pair<int, __Node *>(from, record));   // 将起点标记为已访问
 
     while (record->cross_id != to) {
         for (auto node : graph_map[record->cross_id]) {
@@ -105,7 +113,7 @@ GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_t
         record = candidates.top();                  // 记录这个队顶节点, 以供回溯使用
         candidates.pop();
 
-        visited_map.insert(pair<CROSS::id_type, __Node *>(from, record)); // 将当前节点标记为已访问
+        visited_map.insert(pair<int, __Node *>(from, record)); // 将当前节点标记为已访问
     }
 
     // 上面的while循环结束时，record指向目的节点，接下来从record开始回溯，获得完整路径
@@ -116,7 +124,7 @@ GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_t
 
     // 释放空间
     for_each(visited_map.begin(), visited_map.end(),
-             [](const pair<CROSS::id_type, __Node *> & val) -> void {delete val.second;});
+             [](const pair<int, __Node *> & val) -> void {delete val.second;});
     //这边各个点容量减少一
 
     return *answer;
