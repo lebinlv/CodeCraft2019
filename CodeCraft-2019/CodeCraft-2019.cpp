@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <list>
 #include <algorithm>
 
 #include <chrono>   // speed test
@@ -134,49 +135,88 @@ int main(int argc, char *argv[])
 
 
 	/* TODO:process */
+
+
 	vector<CAR*> cars_running;//已经在运行的车辆
+	list<CAR*> cars_waiting;//已经在运行的车辆
+
+				  //取前面一百个
+	int element_idx;
+	vector<CAR*>::iterator start = car_vec.begin();
 
 	while (true) {
 		/*
 		车辆按照出发时间、行驶速度依次排序
 		*/
-		if (car_vec.begin == car_vec)
+		//是否没有车辆需要调度
+		if (start == car_vec.end())
 			break;
 		/*sort(car_vec.begin(), car_vec.end(),
 		[](CAR* a, CAR* b) -> bool { return a->speed > b->speed; });
 		stable_sort(car_vec.begin(), car_vec.end(),
 		[](CAR* a, CAR* b) -> bool { return a->plan_time < b->speed; });*/
+
 		global_time++;
-		//取前面一百个
-		int element_idx;
-		if (car_vec.size() >= BATCH_SIZE)
+		
+
+		if (car_vec.end() - start >= BATCH_SIZE)
+		{
 			for (element_idx = BATCH_SIZE - 1; element_idx--; element_idx >= 0)
 			{
-				if ((*(car_vec.begin() + element_idx))->plan_time <= global_time)
+				//找到可以出发车辆
+				if ((*(start + element_idx))->plan_time <= global_time)
 					break;
 			}
+			//没有找到可以出发的车辆，进入下一轮循环
+			if (element_idx == -1)
+				continue;
+		}
 		else
-			element_idx = car_vec.size() - 1;
+		{
+			//剩余车辆不足需要调度的数量，直接全部调度出去
+			element_idx = car_vec.end() - start - 1;
+		}
+			
 
 		//释放行驶车辆的占用容量以及删除理论到达车辆
 		release_capacity(cars_running, global_time, &graph);
 
-		//调度车辆
-		for (vector<CAR*>::iterator car = car_vec.begin(); car != car_vec.begin() + element_idx + 1; car++)
+
+
+		for (list<CAR*>::iterator car = cars_waiting.begin(); car != cars_waiting.end(); car++)
 		{
 			//需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
-			graph.get_least_cost_route((*car)->from, (*car)->to, (*car)->speed, (*car), global_time);
+			GRAPH::route_type &result = graph.get_least_cost_route((*car)->from, (*car)->to, (*car)->speed, (*car), global_time);
+			if (!result.empty())
+			{
+				cars_waiting.erase(car);
+			}
+		}
+
+		//调度车辆
+		for (vector<CAR*>::iterator car = start; car != start + element_idx + 1; car++)
+		{
+			//需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
+			GRAPH::route_type &result = graph.get_least_cost_route((*car)->from, (*car)->to, (*car)->speed, (*car), global_time);
+			if (result.empty())
+			{
+				cars_waiting.push_back(*(car));
+				continue;
+			}
+			cars_running.push_back((*car));
 		}
 
 		//加入车辆inser
-		cars_running.insert(cars_running.end(), car_vec.begin(), car_vec.begin() + element_idx + 1);
+		start += element_idx+1;
+
 
 		//删除已经调度车辆
-		for (vector<CAR*>::iterator car = car_vec.begin(); car != car_vec.begin() + element_idx + 1; car++)
+		//指针清理可以删除，节省运行时间
+		/*for (vector<CAR*>::iterator car = car_vec.begin(); car != car_vec.begin() + element_idx + 1; car++)
 		{
 			delete (*car);
 		}
-		car_vec.erase(car_vec.begin, car_vec.begin() + element_idx + 1);
+		car_vec.erase(car_vec.begin, car_vec.begin() + element_idx + 1);*/
 
 
 
@@ -186,7 +226,15 @@ int main(int argc, char *argv[])
 
 	}
 	/* TODO:write output file */
-
+	ofstream fout(answerPath);
+	if (!fout.is_open())
+	{
+		cerr << "无法打开文件 " << answerPath << endl;
+		exit(0);
+	}
+	//写入文件接口
+	//write_to_file(tem_vec,car,fout)
+	fout.close();
 	/* End of write out file */
 	return 0;
 }

@@ -77,10 +77,17 @@ GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_t
 		pre_index = record->cross_id;
 	}
 	auto answer = new vector<CROSS::id_type>; // answer这个vector存储的是从目的节点到源节点的边的地址的序列
+	
+	//--------------------------
+	//开始时间赋值
+	car->start_time = global_time;
+	//----------------------------
+
 
 	while (record != nullptr) {
 		//-----------------------------
 		//容量减少
+
 		capacity_vec[record->p_Node->capacity_idx] -= CAPACITY_FACTOR;
 		//记录节点到该车辆的对象中
 		car->past_nodes.push((CAR::Past_node(record->p_Node, record->cost + global_time)));
@@ -99,22 +106,31 @@ GRAPH::route_type & GRAPH::get_least_cost_route(CROSS::id_type from, CROSS::id_t
 	return *answer;
 }
 
-
+//----------------
 void release_capacity(std::vector<CAR*>& car_running, int global_time, GRAPH *graph)
 {
 	CAR::Past_node node;
 	for (vector<CAR*>::iterator car = car_running.begin(); car != car_running.end(); car++)
 	{
-		for (int i = (*car)->past_nodes.size() - 1; i >= 0; i--) {
-			node = (*car)->past_nodes.top();
-			if (node.arrive_time < global_time)
-			{
-				(*car)->past_nodes.pop();
-				graph->capacity_vec[node.node->capacity_idx] += CAPACITY_FACTOR;
-				break;
-			}
+		node = (*car)->past_nodes.top();
+		if (node.arrive_time < global_time)
+		{
+			//已经到达这个节点，恢复容量并且将它从路径stack中删除
+			graph->capacity_vec[node.node->capacity_idx] += CAPACITY_FACTOR;
+			(*car)->past_nodes.pop();
 		}
+		
 		if ((*car)->past_nodes.size() == 0)
 			car_running.erase(car);
 	}
 }
+//--------------------
+//--------------
+void write_to_file(vector<GRAPH::Node*> & tem_vec, CAR & car, std::ofstream &fout)
+{
+	fout << '(' << car.id << ", " << car.start_time;
+	for (vector<GRAPH::Node *>::reverse_iterator start = tem_vec.rbegin(); start != tem_vec.rend(); ++start)
+		fout << ", " << (*start)->road_id;
+	fout << ")\n";
+}
+//---------------

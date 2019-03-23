@@ -9,6 +9,8 @@
 #define BATCH_SIZE 100  //每个时间段发车数量
 #define CAPACITY_FACTOR 0.5//容量因子
 #define COST_FACTOR 1.1 //开销因子
+
+#include<fstream>
 //-----------------------
 
 struct CROSS
@@ -53,16 +55,24 @@ struct CAR
 	speed_type          speed;
 	time_type           plan_time;
 
+
+
+	//---------------------------
+	int					start_time;
+	//----------------------------
 	//----------------
 	//记录节点
 	struct Past_node {
 		GRAPH::Node* node;
-		int arrive_time;
+		double arrive_time;
 		Past_node() {}
-		Past_node(GRAPH::Node* _node, int _arrive_time) :node(_node), arrive_time(_arrive_time) {}
+		Past_node(GRAPH::Node* _node, double _arrive_time) :node(_node), arrive_time(_arrive_time) {}
 	};
 	stack<Past_node>		past_nodes;
 	//-----------------
+
+
+
 
 	CAR() {}
 	CAR(id_type _id, CROSS::id_type _from, CROSS::id_type _to, speed_type _speed, time_type _time) :
@@ -179,4 +189,10 @@ private:
 //释放在行驶车辆占用的容量以及删除到达车辆
 void release_capacity(std::vector<CAR*>& car_running, int global_time, GRAPH *graph);
 //--------------------------
+
+//------------
+//
+//输出answer文件
+void write_to_file(vector<GRAPH::Node*> & tem_vec, CAR & car, ofstream &fout);
+//------------
 #endif
