@@ -214,9 +214,10 @@ int main(int argc, char *argv[])
 
 /* free memory */
     /* delete CAR* */
-    for_each(car_vec.begin(), car_vec.end(), [](CAR* pCar)->void{delete pCar;});
+    for(auto val:car_vec){delete val;}
+
     /* delete ROAD* */
-    for_each(road_map.begin(), road_map.end(), [](const pair<int, ROAD*> & val)->void{delete val.second;});
+    for(auto val:road_map){delete val.second;}
 /* End of free memory */
 
     auto __end_time = std::chrono::steady_clock::now();

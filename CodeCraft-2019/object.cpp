@@ -28,13 +28,12 @@ GRAPH::GRAPH(int reserve_node_count)
 GRAPH::~GRAPH()
 {
     // free weigth_map
-    for_each(weight_map.begin(), weight_map.end(),
-             [](const pair<int, double*> & val)->void{delete val.second;});
+    for(auto val:weight_map){delete val.second;}
+
     // free graph_map
-    for_each(graph_map.begin(), graph_map.end(),
-            [](const pair<int, std::vector<Node *> > & val)->void{
-                for_each(val.second.begin(), val.second.end(), [](Node* node)->void{delete node;});
-            });
+    for(auto val:graph_map){
+        for(auto node:val.second){delete node;}
+    }
 }
 
 
@@ -91,13 +90,15 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
     answer->reserve(ROAD_VECTOR_RESERVE); // 预分配空间
 
     priority_queue<__Node *, vector<__Node *>, __Node::Compare>  candidates;
-    map<int, __Node *>                                           visited_map;  // 记录节点是否被访问过
+    unordered_map<int, __Node *>                                 visited_map;  // 记录节点是否被访问过
 
     // 创建一个 cost为0， cross_id 为 from， 且 parent 和 p_Node 均为 nullptr 的初始 __Node 节点
     __Node *record = new __Node(0, car->from, nullptr, nullptr);
 
+    visited_map.insert(pair<int, __Node *>(record->cross_id, record)); // 将起始节点标记为已访问
+
+    bool not_find_new_node;
     while (record->cross_id != car->to) {
-        visited_map.insert(pair<int, __Node *>(record->cross_id, record)); // 将当前节点标记为已访问
 
         for (auto node : graph_map[record->cross_id]) {
             // 如果这个节点代表的边没有被访问过 且 边的容量大于0，建立__Node实例, 并把它压入优先队列
@@ -107,18 +108,28 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
         }
 
         // 一直pop直到队顶节点没被访问过
-        while (!candidates.empty() && visited_map.find(candidates.top()->cross_id) != visited_map.end() ) {
-            delete candidates.top();      // 释放节点
+        not_find_new_node = true;
+        while (!candidates.empty()) {
+            // 取队列顶节点
+            record = candidates.top();
+
+            // 如果在visited_map中没有找到该节点，即该节点未被访问过，则退出
+            if(visited_map.find(record->cross_id) == visited_map.end()) {
+                candidates.pop();
+                visited_map.insert(pair<int, __Node *>(record->cross_id, record)); // 将当前节点标记为已访问
+                not_find_new_node = false;
+                break;
+            }
+
+            // 否则就弹出顶点并释放资源
+            delete record;
             candidates.pop();
         }
 
-        if(candidates.empty()) {
-            for_each(visited_map.begin(), visited_map.end(), [](const pair<int, __Node *> &val) -> void { delete val.second; });
+        if(not_find_new_node) {
+            for(auto val : visited_map){delete val.second;}  // 释放 visited_map中的 __Node*
             return answer;
         }
-
-        record = candidates.top();                  // 记录这个队顶节点, 以供回溯使用
-        candidates.pop();
     }
     car->start_time = global_time;
     // 上面的while循环结束时，record指向目的节点，接下来从record开始回溯，获得完整路径
@@ -134,7 +145,7 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
     // 释放空间
     while(!candidates.empty()) { delete candidates.top(); candidates.pop();}  // 释放优先队列中的 __Node*
 
-    for_each(visited_map.begin(), visited_map.end(), [](const pair<int, __Node *> & val) -> void {delete val.second;}); // 释放 visited_map中的 __Node*
+    for(auto val : visited_map){delete val.second;}  // 释放 visited_map中的 __Node*
 
     return answer;
 }
@@ -164,8 +175,6 @@ void release_capacity(std::list<CAR*>& car_running, int global_time)
 void write_to_file(vector<GRAPH::Node*> * tem_vec, CAR * car, std::ofstream &fout)
 {
     fout << '(' << car->id << ", " << car->start_time;
-    for_each(tem_vec->rbegin(), tem_vec->rend(), [&fout](GRAPH::Node* val)->void{fout << ", " << val->pRoad->id;});
-    // for (vector<GRAPH::Node *>::reverse_iterator start = tem_vec->rbegin(); start != tem_vec->rend(); ++start)
-    //     fout << ", " << (*start)->pRoad->id;
+    for(auto val:*tem_vec){fout << ", " << val->pRoad->id;}
     fout << ")\n";
 }

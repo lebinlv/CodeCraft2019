@@ -83,7 +83,7 @@ class GRAPH
 
 
   private:
-    std::map<int, double*>               weight_map;  // 边对于不同速度的车，具有不同的权重
+    std::unordered_map<int, double*>               weight_map;  // 边对于不同速度的车，具有不同的权重
     std::unordered_map<int, std::vector<Node*> >   graph_map;   //
 
     double*                              p_weight;    // 每次计算最短路径之前，根据车速重定向该指针
