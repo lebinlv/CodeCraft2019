@@ -144,7 +144,7 @@ struct CAR
 };
 
 //释放在行驶车辆占用的容量以及删除到达车辆
-void release_capacity(std::list<CAR *> & car_running, int global_time, GRAPH *graph);
+void release_capacity(std::list<CAR *> & car_running, int global_time);
 
 //输出answer文件
 void write_to_file(std::vector<GRAPH::Node *> * tem_vec, CAR *car, std::ofstream &fout);

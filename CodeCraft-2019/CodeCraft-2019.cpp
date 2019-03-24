@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
         }
 
         //释放行驶车辆的占用容量以及删除理论到达车辆
-        release_capacity(cars_running, global_time, &graph);
+        release_capacity(cars_running, global_time);
 
         //需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
         for (list<CAR*>::iterator car = cars_waiting.begin(); car != cars_waiting.end();) {
