@@ -6,10 +6,16 @@
 
 #include "lib/object.hpp"
 
+// char line_buffer[MAXIMUM_LENGTH_PER_LINE]; fgets(line_buffer, 50, fptr);
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
+
+// vector<CAR*> car_vec; car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
 #define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预分配空间
+
+// GRAPH graph(NODE_VECTOR_RESERVE_SIZE);
 #define NODE_VECTOR_RESERVE_SIZE   360     // 预计边的数量（考虑双向），假设图包含n*n个路口，则设置为 4n(n-1)
-#define USE_CXX_SSTREAM            0
+
+// 官方保证车辆速度小于道路长度length，因此创建一个长度为length的bool数组检测有多少种车速
 #define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
 
 using namespace std;
@@ -72,7 +78,7 @@ int main(int argc, char *argv[])
     /* 如果两辆车的计划时间相等，则先速度快的车优先级高；否则先出发的车优先级高。 */
     sort(car_vec.begin(), car_vec.end(),
          [](CAR* a, CAR* b) -> bool { return 
-         (a->plan_time ==  b->plan_time) ? (a->speed > b->speed) : (a->plan_time < b->plan_time);});
+         (a->plan_time ==  b->plan_time) ? (a->speed < b->speed) : (a->plan_time < b->plan_time);});
     // auto end = std::chrono::steady_clock::now();
     // std::chrono::duration<double, std::micro> elapsed = end - start; // std::micro 表示以微秒为时间单位
     // std::cout << "time: " << elapsed.count() << "us" << std::endl;

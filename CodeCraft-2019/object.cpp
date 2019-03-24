@@ -1,6 +1,6 @@
 #include "lib/object.hpp"
 
-#define ROAD_VECTOR_RESERVE   64     // 为 寻路函数返回的vector 预分配的空间
+#define ROAD_VECTOR_RESERVE   64     // 为寻路函数返回的vector预分配的空间，建议为路口的数目的一半
 using namespace std;
 
 /********* class GRAPH  *********/
@@ -101,7 +101,7 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
 
         for (auto node : graph_map[record->cross_id]) {
             // 如果这个节点代表的边没有被访问过 且 边的容量大于0，建立__Node实例, 并把它压入优先队列
-            if(visited_map.find(node->cross_id) == visited_map.end() && node->capacity > 0) {
+            if(visited_map.find(node->cross_id) == visited_map.end() && node->capacity > ROAD_VALID_THREHOLD) {
                 candidates.push(new __Node(record->cost + p_weight[node->info_idx], node->cross_id, record, node));
             }
         }

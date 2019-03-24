@@ -9,10 +9,11 @@
 #include <list>
 #include <fstream>
 #include <stack>
+#include <unordered_map>
 
-#define BATCH_SIZE 100    //每个时间段发车数量
-#define CAPACITY_FACTOR 1 //容量因子
-#define COST_FACTOR 1.1   //开销因子
+#define BATCH_SIZE           260  //每个时间段发车数量
+#define CAPACITY_FACTOR      0.55 //容量因子
+#define ROAD_VALID_THREHOLD  1    //当边的容量小于此值时认为该边无效
 
 struct ROAD
 {
@@ -37,12 +38,12 @@ class GRAPH
   public:
     struct Node{
         int                           cross_id;   // 本节点代表的路口的id
-        int                           capacity;   // 到达本节点的边的容量
-        int                           info_idx;   // 权重和容量信息均通过info_idx访问
+        double                        capacity;   // 到达本节点的边的容量
+        int                           info_idx;   // 权重、长度、限速等信息均通过info_idx访问
         ROAD *                        pRoad;      // 通过 pRoad 获取道路长度、最大速度、车道数、是否双向等信息
 
         static int                    node_count; // 静态变量用于统计节点个数，初始值为0
-        static std::vector<ROAD *>    pRoad_vec;  // 为了便于计算 weight_map 而添加的vector
+        static std::vector<ROAD *>    pRoad_vec;  // 通过pRoad_vec[info_idx] 可读取 length, channel, max_speed, from, to 等信息
 
         Node(int _cross_id, ROAD *_pRoad);
         ~Node(){}
@@ -83,7 +84,7 @@ class GRAPH
 
   private:
     std::map<int, double*>               weight_map;  // 边对于不同速度的车，具有不同的权重
-    std::map<int, std::vector<Node*> >   graph_map;   //
+    std::unordered_map<int, std::vector<Node*> >   graph_map;   //
 
     double*                              p_weight;    // 每次计算最短路径之前，根据车速重定向该指针
 
