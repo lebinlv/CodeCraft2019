@@ -120,7 +120,7 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
         record = candidates.top();                  // 记录这个队顶节点, 以供回溯使用
         candidates.pop();
     }
-
+    car->start_time = global_time;
     // 上面的while循环结束时，record指向目的节点，接下来从record开始回溯，获得完整路径
     while (record->parent != nullptr) {
 
@@ -132,16 +132,16 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
     }
 
     // 释放空间
-    while(!candidates.empty()) { delete candidates.top(); candidates.pop();}
-    for_each(visited_map.begin(), visited_map.end(), [](const pair<int, __Node *> & val) -> void {delete val.second;});
-    //这边各个点容量减少一
+    while(!candidates.empty()) { delete candidates.top(); candidates.pop();}  // 释放优先队列中的 __Node*
+
+    for_each(visited_map.begin(), visited_map.end(), [](const pair<int, __Node *> & val) -> void {delete val.second;}); // 释放 visited_map中的 __Node*
 
     return answer;
 }
 
 
 //容量释放与相关车辆删除
-void release_capacity(std::list<CAR*>& car_running, int global_time, GRAPH *graph)
+void release_capacity(std::list<CAR*>& car_running, int global_time)
 {
     CAR::Past_node* node;
     for (auto car = car_running.begin(); car!=car_running.end();) {
@@ -164,7 +164,8 @@ void release_capacity(std::list<CAR*>& car_running, int global_time, GRAPH *grap
 void write_to_file(vector<GRAPH::Node*> * tem_vec, CAR * car, std::ofstream &fout)
 {
     fout << '(' << car->id << ", " << car->start_time;
-    for (vector<GRAPH::Node *>::reverse_iterator start = tem_vec->rbegin(); start != tem_vec->rend(); ++start)
-        fout << ", " << (*start)->pRoad->id;
+    for_each(tem_vec->rbegin(), tem_vec->rend(), [&fout](GRAPH::Node* val)->void{fout << ", " << val->pRoad->id;});
+    // for (vector<GRAPH::Node *>::reverse_iterator start = tem_vec->rbegin(); start != tem_vec->rend(); ++start)
+    //     fout << ", " << (*start)->pRoad->id;
     fout << ")\n";
 }
