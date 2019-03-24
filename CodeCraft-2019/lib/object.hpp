@@ -6,7 +6,13 @@
 #include <map>         // 权重字典
 #include <queue>
 #include <algorithm>
+#include <list>
+#include <fstream>
+#include <stack>
 
+#define BATCH_SIZE 100    //每个时间段发车数量
+#define CAPACITY_FACTOR 1 //容量因子
+#define COST_FACTOR 1.1   //开销因子
 
 struct ROAD
 {
@@ -23,33 +29,7 @@ struct ROAD
 };
 
 
-struct CAR
-{
-    // (id, from, to, speed, planTime)
-    int id, from, to, speed, plan_time;
-
-    CAR() {}
-    CAR(int _id, int _from, int _to, int _speed, int _time):
-        id(_id), from(_from), to(_to), speed(_speed), plan_time(_time) {}
-    ~CAR() {}
-
-    /** 
-     * @brief 自定义优先队列的比较方法
-     * 
-     * 如果两辆车的计划时间相等，则先速度快的车优先级高；
-     * 否则先出发的车优先级高。
-     */
-    struct Compare {
-        bool operator()(const CAR* a, const CAR* b) {
-            return (a->plan_time == b->plan_time) ?
-                   (a->speed < b->speed) : (a->plan_time > b->plan_time);
-        }
-        bool operator()(const CAR & a, const CAR & b) {
-            return (a.plan_time == b.plan_time) ?
-                   (a.speed < b.speed) : (a.plan_time > b.plan_time);
-        }
-    };
-}; 
+struct CAR;
 
 
 class GRAPH
@@ -98,7 +78,7 @@ class GRAPH
      * @param speed 
      * @return route_type& 返回 vector<Node *>，如果失败则vector为空，如果成功，逆序遍历此vector便可得到路径
      */
-    route_type & get_least_cost_route(int from, int to, int speed);
+    route_type * get_least_cost_route(CAR* car, int global_time);
 
 
   private:
@@ -114,7 +94,7 @@ class GRAPH
         __Node *     parent;   // 用于到达终点时回溯得到路径
         Node *       p_Node;
 
-        __Node(int _cost, int _cross_id, __Node* _parent, Node* _p_Node) :
+        __Node(double _cost, int _cross_id, __Node* _parent, Node* _p_Node) :
                cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
         ~__Node(){}
 
@@ -125,5 +105,48 @@ class GRAPH
         };
     };
 };
+
+
+struct CAR
+{
+    // (id, from, to, speed, planTime)
+    int id, from, to, speed, plan_time;
+    int					start_time;
+    struct Past_node {
+        GRAPH::Node* node;
+        double arrive_time;
+        Past_node() {}
+        Past_node(GRAPH::Node* _node, double _arrive_time) :node(_node), arrive_time(_arrive_time) {}
+    };
+    std::stack<Past_node*>      past_nodes;
+
+    CAR() {}
+    CAR(int _id, int _from, int _to, int _speed, int _time):
+        id(_id), from(_from), to(_to), speed(_speed), plan_time(_time) {}
+    ~CAR() {}
+
+    /** 
+     * @brief 自定义优先队列的比较方法
+     * 
+     * 如果两辆车的计划时间相等，则先速度快的车优先级高；
+     * 否则先出发的车优先级高。
+     */
+    struct Compare {
+        bool operator()(const CAR* a, const CAR* b) {
+            return (a->plan_time == b->plan_time) ?
+                   (a->speed < b->speed) : (a->plan_time > b->plan_time);
+        }
+        bool operator()(const CAR & a, const CAR & b) {
+            return (a.plan_time == b.plan_time) ?
+                   (a.speed < b.speed) : (a.plan_time > b.plan_time);
+        }
+    };
+};
+
+//释放在行驶车辆占用的容量以及删除到达车辆
+void release_capacity(std::list<CAR *> & car_running, int global_time, GRAPH *graph);
+
+//输出answer文件
+void write_to_file(std::vector<GRAPH::Node *> * tem_vec, CAR *car, std::ofstream &fout);
 
 #endif

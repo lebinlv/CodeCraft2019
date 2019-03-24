@@ -14,9 +14,12 @@
 
 using namespace std;
 
+static int global_time = 0; //q全局时间
 
 int main(int argc, char *argv[])
 {
+    auto __start_time = std::chrono::steady_clock::now();
+
 /* SDK code */
     cout << "Begin" << endl;
 
@@ -112,30 +115,96 @@ int main(int argc, char *argv[])
 
 
 /* 寻路函数测试*/
-    int i=1;
-    while(i<100){
-        i++;
-        auto start = std::chrono::steady_clock::now();
-        auto tem_vec = graph.get_least_cost_route(1,i,2);
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double, std::micro> elapsed = end - start; // std::micro 表示以微秒为时间单位
+    // int i=1;
+    // while(i<64){
+    //     i++;
+    //     auto start = std::chrono::steady_clock::now();
+    //     auto tem_vec = graph.get_least_cost_route(0,i,2);
+    //     auto end = std::chrono::steady_clock::now();
+    //     std::chrono::duration<double, std::micro> elapsed = end - start; // std::micro 表示以微秒为时间单位
 
-        std::cout << "time: " << elapsed.count() << "us: ";
-        if(tem_vec.empty()){cout << "not find road!" << endl; continue;}
-        for_each(tem_vec.rbegin(), tem_vec.rend(), [](GRAPH::Node* val)->void{cout<<val->cross_id << ' ';});
-        //tem_vec.front()->capacity -= 10;
-        cout << endl;
-    }
+    //     std::cout << "time: " << elapsed.count() << "us: ";
+    //     if(tem_vec.empty()){cout << "not find road!" << endl; continue;}
+    //     for_each(tem_vec.rbegin(), tem_vec.rend(), [](GRAPH::Node* val)->void{cout<<val->cross_id << ' ';});
+    //     //tem_vec.front()->capacity -= 10;
+    //     cout << endl;
+    // }
 /* End of 寻路函数测试*/
 
-    /* TODO:process */
 
-    /* End of process */
+/* 打开输出文件*/
+    ofstream fout(answerPath);
+    if (!fout.is_open()){
+        cerr << "无法打开文件 " << answerPath << endl;
+        exit(0);
+    }
+/*End of 打开输出文件*/  
 
-    /* TODO:write output file */
 
-    /* End of write out file */
+/* 调度车辆 */
+    list<CAR*> cars_running;//已经在运行的车辆
+    list<CAR*> cars_waiting;//等待的车辆
 
+    //取前面一百个
+    int element_idx;
+    vector<CAR*>::iterator start = car_vec.begin();
+
+    while (true) {
+        //是否没有车辆需要调度
+        if (start >= car_vec.end() && cars_waiting.empty() ) break;
+
+        global_time++;
+        if (car_vec.end() - start >= BATCH_SIZE) {
+            for (element_idx = BATCH_SIZE - 1; element_idx >= 0; element_idx--) {
+                //找到可以出发车辆
+                if ((*(start + element_idx))->plan_time <= global_time)
+                    break;
+            }
+            //没有找到可以出发的车辆，进入下一轮循环
+            if (element_idx == -1)
+                continue;
+        } else {
+            //剩余车辆不足需要调度的数量，直接全部调度出去
+            element_idx = car_vec.end() - start - 1;
+        }
+
+        //释放行驶车辆的占用容量以及删除理论到达车辆
+        release_capacity(cars_running, global_time, &graph);
+
+        //需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
+        for (list<CAR*>::iterator car = cars_waiting.begin(); car != cars_waiting.end();) {
+            GRAPH::route_type * result = graph.get_least_cost_route(*car, global_time);
+            if (!result->empty()) {
+                write_to_file(result, (*car), fout);
+                cars_running.push_back(*car);
+                cars_waiting.erase(car++);
+            } else {
+                ++car;
+            }
+            delete result;
+        }
+
+        //调度车辆
+        for (vector<CAR*>::iterator car = start; car != start + element_idx + 1; car++)
+        {
+            //需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
+            GRAPH::route_type * result = graph.get_least_cost_route(*car, global_time);
+            if (result->empty()) {
+                cars_waiting.push_back(*(car));
+                continue;
+            } else {
+                write_to_file(result, (*car), fout);
+                cars_running.push_back((*car));
+            }
+            delete result;
+        }
+
+        //加入车辆inser
+        start += element_idx+1;
+    }
+/* End of 调度车辆 */
+ 
+    fout.close();
 
 /* free memory */
     /* delete CAR* */
@@ -143,5 +212,10 @@ int main(int argc, char *argv[])
     /* delete ROAD* */
     for_each(road_map.begin(), road_map.end(), [](const pair<int, ROAD*> & val)->void{delete val.second;});
 /* End of free memory */
+
+    auto __end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = __end_time - __start_time; // std::micro 表示以微秒为时间单位
+    std::cout << "time: " << elapsed.count() << "ms: ";
+    
     return 0;
 }
