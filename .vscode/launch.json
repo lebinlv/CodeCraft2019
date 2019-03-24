@@ -11,10 +11,10 @@
             "program": "${workspaceFolder}/bin/CodeCraft-2019",
             "cwd": "${workspaceFolder}",
             "args": [
-                "${workspaceFolder}/config_train_1/car.txt",
-                "${workspaceFolder}/config_train_1/road.txt",
-                "${workspaceFolder}/config_train_1/cross.txt",
-                "${workspaceFolder}/config_train_1/answer.txt"
+                "${workspaceFolder}/config/car.txt",
+                "${workspaceFolder}/config/road.txt",
+                "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/answer.txt"
             ],
             "stopAtEntry": false,
             "environment": [],
@@ -33,7 +33,23 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build project"
+            "preLaunchTask": "build-debug"
+        },
+        {
+            "name": "Run Release",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/CodeCraft-2019",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "${workspaceFolder}/config/car.txt",
+                "${workspaceFolder}/config/road.txt",
+                "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/answer.txt"
+            ],
+            "stopAtEntry": false,
+            "externalConsole": false,
+            "preLaunchTask": "build-release"
         }
     ]
 }
