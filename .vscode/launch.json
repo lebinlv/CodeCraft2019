@@ -49,6 +49,10 @@
             ],
             "stopAtEntry": false,
             "externalConsole": false,
+            "MIMode": "gdb",
+            "windows": {
+                "miDebuggerPath": "C:/mingw-w64/bin/gdb.exe"
+            },
             "preLaunchTask": "build-release"
         }
     ]
