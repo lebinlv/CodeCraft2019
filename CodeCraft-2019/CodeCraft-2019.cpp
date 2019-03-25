@@ -18,6 +18,9 @@
 // 官方保证车辆速度小于道路长度length，因此创建一个长度为length的bool数组检测有多少种车速
 #define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
 
+// 为减少磁盘IO操作次数，优化速度，为输出文件answer.txt预分配空间，单位：KB
+#define OUT_FILE_RESERVE_SPACE     1024
+
 using namespace std;
 
 static int global_time = 0; //q全局时间
@@ -53,7 +56,7 @@ int main(int argc, char *argv[])
   /* Read car configuration */
     vector<CAR*> car_vec;             // attention: you should delete CAR* manually!!!
     car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
-    bool car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {false};    // 
+    bool car_speed_detect_array[MAXIMUM_ROAD_LENGTH] = {false};    //
 
     int id, from, to, speed, plan_time;
 
@@ -77,7 +80,7 @@ int main(int argc, char *argv[])
 
     /* 如果两辆车的计划时间相等，则先速度快的车优先级高；否则先出发的车优先级高。 */
     sort(car_vec.begin(), car_vec.end(),
-         [](CAR* a, CAR* b) -> bool { return 
+         [](CAR* a, CAR* b) -> bool { return
          (a->plan_time ==  b->plan_time) ? (a->speed < b->speed) : (a->plan_time < b->plan_time);});
     // auto end = std::chrono::steady_clock::now();
     // std::chrono::duration<double, std::micro> elapsed = end - start; // std::micro 表示以微秒为时间单位
@@ -140,11 +143,13 @@ int main(int argc, char *argv[])
 
 /* 打开输出文件*/
     ofstream fout(answerPath);
+    char out_file_buffer[OUT_FILE_RESERVE_SPACE*1024];
+    fout.rdbuf()->pubsetbuf(out_file_buffer, OUT_FILE_RESERVE_SPACE*1024);
     if (!fout.is_open()){
         cerr << "无法打开文件 " << answerPath << endl;
         exit(0);
     }
-/*End of 打开输出文件*/  
+/*End of 打开输出文件*/
 
 
 /* 调度车辆 */
@@ -209,7 +214,7 @@ int main(int argc, char *argv[])
         start += element_idx+1;
     }
 /* End of 调度车辆 */
- 
+
     fout.close();
 
 /* free memory */
@@ -223,6 +228,6 @@ int main(int argc, char *argv[])
     auto __end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> elapsed = __end_time - __start_time; // std::micro 表示以微秒为时间单位
     std::cout << "time: " << elapsed.count() << "ms: ";
-    
+
     return 0;
 }
