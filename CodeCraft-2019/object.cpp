@@ -175,6 +175,6 @@ void release_capacity(std::list<CAR*>& car_running, int global_time)
 void write_to_file(vector<GRAPH::Node*> * tem_vec, CAR * car, std::ofstream &fout)
 {
     fout << '(' << car->id << ", " << car->start_time;
-    for(auto val:*tem_vec){fout << ", " << val->pRoad->id;}
+    for_each(tem_vec->rbegin(), tem_vec->rend(), [&fout](GRAPH::Node *val) -> void { fout << ", " << val->pRoad->id; });
     fout << ")\n";
 }
