@@ -1,38 +1,103 @@
-//----------------------
-//ÊÍ·ÅÔÚĞĞÊ»³µÁ¾Õ¼ÓÃµÄÈİÁ¿ÒÔ¼°É¾³ıµ½´ï³µÁ¾
-void release_capacity(std::vector<CAR*>& car_running, int global_time, GRAPH *graph);
-//--------------------------
+#include "lib/function.hpp"
+#include <iostream>
+using namespace std;
 
-//------------
-//
-//Êä³öanswerÎÄ¼ş
-void write_to_file(vector<GRAPH::Node*> & tem_vec, CAR & car, ofstream &fout);
-//------------
-//----------------
-void release_capacity(std::vector<CAR*>& car_running, int global_time, GRAPH *graph)
+//å®¹é‡é‡Šæ”¾ä¸ç›¸å…³è½¦è¾†åˆ é™¤
+void release_capacity(std::list<CAR*>& car_running, int global_time)
 {
-	CAR::Past_node node;
-	for (vector<CAR*>::iterator car = car_running.begin(); car != car_running.end(); car++)
-	{
-		node = (*car)->past_nodes.top();
-		if (node.arrive_time < global_time)
-		{
-			//ÒÑ¾­µ½´ïÕâ¸ö½Úµã£¬»Ö¸´ÈİÁ¿²¢ÇÒ½«Ëü´ÓÂ·¾¶stackÖĞÉ¾³ı
-			graph->capacity_vec[node.node->capacity_idx] += CAPACITY_FACTOR;
-			(*car)->past_nodes.pop();
-		}
+    CAR::Past_node* node;
+    for (auto car = car_running.begin(); car!=car_running.end();) {
+	node = (*car)->past_nodes.top();
+        if (node->arrive_time < global_time){
+            //å·²ç»åˆ°è¾¾è¿™ä¸ªèŠ‚ç‚¹ï¼Œæ¢å¤å®¹é‡å¹¶ä¸”å°†å®ƒä»è·¯å¾„stackä¸­åˆ 
+            node->node->capacity += (*car)->capacity_factor;
+            (*car)->past_nodes.pop();
+            delete node;
+        }
+        
+        if ((*car)->past_nodes.empty()){
+            car_running.erase(car++);
+        }else {
+            car++;
+        }
+    }
+}
 
-		if ((*car)->past_nodes.size() == 0)
-			car_running.erase(car);
-	}
-}
-//--------------------
-//--------------
-void write_to_file(vector<GRAPH::Node*> & tem_vec, CAR & car, std::ofstream &fout)
+
+// ç­”æ¡ˆå†™å…¥æ¥å£
+void write_to_file(std::vector<GRAPH::Node*> * tem_vec, CAR * car, std::ofstream &fout)
 {
-	fout << '(' << car.id << ", " << car.start_time;
-	for (vector<GRAPH::Node *>::reverse_iterator start = tem_vec.rbegin(); start != tem_vec.rend(); ++start)
-		fout << ", " << (*start)->road_id;
-	fout << ")\n";
+    fout << '(' << car->id << ", " << car->start_time;
+    for_each(tem_vec->rbegin(), tem_vec->rend(), [&fout](GRAPH::Node *val) -> void { fout << ", " << val->pRoad->id; });
+    fout << ")\n";
 }
-//---------------
+
+
+
+
+WARM_UPer::WARM_UPer(int plan_time_record[], int end_plan_time) : _end_plan_time(end_plan_time)
+{
+    int count = 0;
+    record_vec.reserve(end_plan_time);
+    for(int i=0; i<end_plan_time; i++){
+        record_vec.push_back(new Recorder(count, plan_time_record[i]));
+        count += plan_time_record[i];
+    }
+}
+
+int WARM_UPer::get_car(int size, int t, vector<pair<int, int> > *answer)
+{
+    auto pRecorder = record_vec[t];
+    auto remain = pRecorder->remain;
+    // å¦‚æœå½“å‰æ—¶åˆ»çš„å¯å‡ºå‘è½¦è¾†æ•°ç›®ä¸å°äº dispatch_size
+    if(remain >= size){
+        answer->push_back(pair<int, int>(pRecorder->p_start, pRecorder->p_start + size));
+        pRecorder->p_start += size;
+        pRecorder->remain -= size;
+        return size;
+    } else if(remain > 0) {
+        answer->push_back(pair<int, int>(pRecorder->p_start, pRecorder->p_start + remain));
+        pRecorder->p_start += remain;
+        pRecorder->remain = 0;
+        return remain;
+    } else return 0;
+}
+
+vector< pair<int, int> > * WARM_UPer::get_car_in_warm_up(int dispatch_size, int global_time)
+{
+    auto answer = new vector< pair<int, int> >();
+    //get_car(dispatch_size, global_time, answer);
+    get_car(dispatch_size, global_time, answer);
+    return answer;
+}
+
+void WARM_UPer::warm_up_end(std::vector<CAR *> & car_vec)
+{
+    // erase car_vec
+    //int temp = car_vec.size();
+    //for_each(record_vec.rbegin(), record_vec.rend(),
+    //        [&car_vec](Recorder * val)->void{car_vec.erase(car_vec.begin()+val->start, car_vec.begin()+val->p_start);});
+    //temp = car_vec.size();
+    // é‡æ–°æ’åº
+    stable_sort(car_vec.begin(), car_vec.end(), [](CAR *a, CAR *b)->bool{return a->speed < b->speed;});
+}
+void get_factor(CAR* car,int time){
+    //if(is_new_round)
+    //{
+    //    car->capacity_factor=0.55;
+    //    return;
+   // }
+
+    if(time<100)
+    {
+        car->capacity_factor=0.65;
+    }
+    else if(time<250)
+    {
+        car->capacity_factor=0.6;
+    }
+    else if(time<2500)
+    {
+        car->capacity_factor=0.6;
+    }
+}
