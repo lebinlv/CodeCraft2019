@@ -11,9 +11,9 @@
 #include <stack>
 #include <unordered_map>
 
-#define BATCH_SIZE           260  //每个时间段发车数量
-#define CAPACITY_FACTOR      0.55 //容量因子
-#define ROAD_VALID_THREHOLD  1    //当边的容量小于此值时认为该边无效
+static float CAPACITY_FACTOR = 0;   //容量因子
+static float ROAD_VALID_THREHOLD = 0;  //当边的容量小于此值时认为该边无效
+
 
 struct ROAD
 {
@@ -26,6 +26,8 @@ struct ROAD
     ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex):
          id(_id), length(_length), max_speed(_speed), channel(_channel),
          from(_from), to(_to), isDuplex(_isDuplex) {ini_capacity = _length * _channel;}
+    ROAD(const ROAD &) = delete;
+    ROAD(ROAD &&) = delete;
     ~ROAD(){}
 };
 
@@ -46,12 +48,18 @@ class GRAPH
         static std::vector<ROAD *>    pRoad_vec;  // 通过pRoad_vec[info_idx] 可读取 length, channel, max_speed, from, to 等信息
 
         Node(int _cross_id, ROAD *_pRoad);
+        Node() = delete;
+        Node(const Node &) = delete;
+        Node(Node &&) = delete;
         ~Node(){}
     };
 
     typedef std::vector<Node *> route_type; // 寻最短路函数的返回数据类型
 
     GRAPH(int reserve_node_count);
+    GRAPH() = delete;
+    GRAPH(const GRAPH &) = delete;
+    GRAPH(GRAPH &&) = delete;
     ~GRAPH();
 
     /**
@@ -80,6 +88,7 @@ class GRAPH
      * @return route_type& 返回 vector<Node *>，如果失败则vector为空，如果成功，逆序遍历此vector便可得到路径
      */
     route_type * get_least_cost_route(CAR* car, int global_time);
+    route_type * get_least_cost_route(int from, int to, int speed);
 
 
   private:
@@ -97,6 +106,9 @@ class GRAPH
 
         __Node(double _cost, int _cross_id, __Node* _parent, Node* _p_Node) :
                cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
+        __Node() = delete;
+        __Node(const __Node &) = delete;
+        __Node(__Node &&) = delete;
         ~__Node(){}
 
         struct Compare{
@@ -113,6 +125,7 @@ struct CAR
     // (id, from, to, speed, planTime)
     int id, from, to, speed, plan_time;
     int					start_time;
+    float                 capacity_factor;
     struct Past_node {
         GRAPH::Node* node;
         double arrive_time;
@@ -124,6 +137,8 @@ struct CAR
     CAR() {}
     CAR(int _id, int _from, int _to, int _speed, int _time):
         id(_id), from(_from), to(_to), speed(_speed), plan_time(_time) {}
+    CAR(const CAR &) = delete;
+    CAR(CAR &&) = delete;
     ~CAR() {}
 
     /** 
@@ -143,11 +158,5 @@ struct CAR
         }
     };
 };
-
-//释放在行驶车辆占用的容量以及删除到达车辆
-void release_capacity(std::list<CAR *> & car_running, int global_time);
-
-//输出answer文件
-void write_to_file(std::vector<GRAPH::Node *> * tem_vec, CAR *car, std::ofstream &fout);
-
+void get_factor(CAR* car,int time);
 #endif
