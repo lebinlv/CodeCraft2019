@@ -1,4 +1,4 @@
-#ifndef _OBJRCT_H_
+﻿#ifndef _OBJRCT_H_
 #define _OBJECT_H_
 
 #include <cstdint>
@@ -11,17 +11,15 @@
 #include <stack>
 #include <unordered_map>
 
-//#define BATCH_SIZE           260  //每个时间段发车数量
-//#define CAPACITY_FACTOR      0.8 //容量因子
-//#define ROAD_VALID_THREHOLD  2    //当边的容量小于此值时认为该边无效
 
 /*调参区域*/
-static int BATCH_SIZE = 10000;           //Warm up 阶段调度车辆
-static float CAPACITY_FACTOR = 0;   //容量因子
-static float ROAD_VALID_THREHOLD = 1;  //当边的容量小于此值时认为该边无效
-static int WARM_UP_TIME = 10;               //出发时间分布最大值
-
+static int BATCH_SIZE = 1200;           //Warm up 阶段调度车辆
+static int WARM_UP_TIME = 49;               //出发时间分布最大值
 /*调参区域*/
+
+
+static float CAPACITY_FACTOR = 0;   //容量因子，不可调参，不需要了，懒得改代码，不删了
+static float ROAD_VALID_THREHOLD = 0;  //容量阈值，当边的容量小于此值时认为该边无效，不可调参，不需要了，懒得改代码，不删了
 
 struct ROAD
 {
