@@ -14,6 +14,7 @@
                 "${workspaceFolder}/config/car.txt",
                 "${workspaceFolder}/config/road.txt",
                 "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/presetAnswer.txt",
                 "${workspaceFolder}/config/answer.txt"
             ],
             "stopAtEntry": false,
@@ -45,6 +46,7 @@
                 "${workspaceFolder}/config/car.txt",
                 "${workspaceFolder}/config/road.txt",
                 "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/presetAnswer.txt",
                 "${workspaceFolder}/config/answer.txt"
             ],
             "stopAtEntry": false,

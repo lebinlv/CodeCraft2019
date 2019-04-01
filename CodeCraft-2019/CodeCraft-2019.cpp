@@ -32,20 +32,22 @@ int main(int argc, char *argv[])
 
 /* SDK code */
     cout << "Begin" << endl;
-
-    if(argc < 5){
-        cout << "please input args: carPath, roadPath, crossPath, answerPath" << endl;
+    
+    if(argc < 6){
+        cout << "please input args: carPath, roadPath, crossPath, answerPath" << std::endl;
         exit(1);
     }
-
+    
     string carPath(argv[1]);
     string roadPath(argv[2]);
     string crossPath(argv[3]);
-    string answerPath(argv[4]);
+    string presetAnswerPath(argv[4]);
+    string answerPath(argv[5]);
 
     cout << "carPath is " << carPath << endl;
     cout << "roadPath is " << roadPath << endl;
     cout << "crossPath is " << crossPath << endl;
+    cout << "presetAnswerPath is " << presetAnswerPath << endl;
     cout << "answerPath is " << answerPath << endl;
 /* END of SDK code */
 
@@ -253,7 +255,7 @@ int main(int argc, char *argv[])
 
     auto __end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> elapsed = __end_time - __start_time; // std::micro 表示以微秒为时间单位
-    std::cout << "time: " << elapsed.count() << "ms: ";
+    std::cout << "time: " << elapsed.count() << "ms." << endl;
 
     return 0;
 }

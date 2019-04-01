@@ -18,6 +18,7 @@
                 "-std=c++11",
                 "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
                 "${workspaceFolder}/CodeCraft-2019/object.cpp",
+                "${workspaceFolder}/CodeCraft-2019/function.cpp",
                 "-o",
                 "${workspaceFolder}/bin/CodeCraft-2019"
             ]
@@ -37,8 +38,24 @@
                 "-std=c++11",
                 "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
                 "${workspaceFolder}/CodeCraft-2019/object.cpp",
+                "${workspaceFolder}/CodeCraft-2019/function.cpp",
                 "-o",
                 "${workspaceFolder}/bin/CodeCraft-2019"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Run-release",
+            "type": "shell",
+            "command": "${workspaceFolder}/bin/CodeCraft-2019",
+            "args": [
+                "${workspaceFolder}/config/car.txt",
+                "${workspaceFolder}/config/road.txt",
+                "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/presetAnswer.txt",
+                "${workspaceFolder}/config/answer.txt"
             ]
         },
         {
