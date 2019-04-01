@@ -82,22 +82,16 @@ void WARM_UPer::warm_up_end(std::vector<CAR *> & car_vec)
     stable_sort(car_vec.begin(), car_vec.end(), [](CAR *a, CAR *b)->bool{return a->speed < b->speed;});
 }
 void get_factor(CAR* car,int time){
-    //if(is_new_round)
-    //{
-    //    car->capacity_factor=0.55;
-    //    return;
-   // }
-
-    if(time<100)
+    if(time<175)
     {
-        car->capacity_factor=0.65;
+        car->capacity_factor=0.48;
     }
-    else if(time<250)
+    else if(time<325)
     {
-        car->capacity_factor=0.6;
+        car->capacity_factor=0.48;
     }
-    else if(time<2500)
+    else
     {
-        car->capacity_factor=0.6;
+        car->capacity_factor=0.45;
     }
 }

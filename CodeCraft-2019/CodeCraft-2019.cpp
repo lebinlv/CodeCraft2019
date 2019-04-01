@@ -11,16 +11,16 @@
 #define MAXIMUM_LENGTH_PER_LINE    50      // 每行字符个数不超过 MAXIMUM_LENGTH_PER_LINE
 
 // vector<CAR*> car_vec; car_vec.reserve(CAR_VECTOR_RESERVE_SIZE);
-#define CAR_VECTOR_RESERVE_SIZE    11000   // 保存车辆信息的vector的预分配空间
+#define CAR_VECTOR_RESERVE_SIZE    62000   // 保存车辆信息的vector的预分配空间
 
 // GRAPH graph(NODE_VECTOR_RESERVE_SIZE);
 #define NODE_VECTOR_RESERVE_SIZE   360     // 预计边的数量（考虑双向），假设图包含n*n个路口，建议设置为 4n(n-1)
 
 // 官方保证车辆速度小于道路长度length，因此创建一个长度为length的bool数组检测有多少种车速
-#define MAXIMUM_ROAD_LENGTH        20      // 道路的最大长度
+#define MAXIMUM_ROAD_LENGTH        50      // 道路的最大长度
 
 // 用于统计计划出发时间在 MAXIMUM_WARM_UP_TIME 内的各时刻车辆数目
-#define MAXIMUM_WARM_UP_TIME       20      // 
+#define MAXIMUM_WARM_UP_TIME       50      // 
 
 // char out_file_buffer[OUT_FILE_RESERVE_SPACE*1024]; fout.rdbuf()->pubsetbuf(out_file_buffer, OUT_FILE_RESERVE_SPACE*1024);
 #define OUT_FILE_RESERVE_SPACE     1024    // 为减少磁盘IO操作次数，优化速度，为输出文件answer.txt预分配空间，单位：KB
@@ -152,7 +152,6 @@ int main(int argc, char *argv[])
 #ifdef RUN_CAR
 /* 打开输出文件*/
     ofstream fout;
-    ofstream temp("temp.txt");
     char out_file_buffer[OUT_FILE_RESERVE_SPACE*1024];
     fout.rdbuf()->pubsetbuf(out_file_buffer, OUT_FILE_RESERVE_SPACE*1024);
     fout.open(answerPath);
@@ -179,7 +178,6 @@ int main(int argc, char *argv[])
     
     for (; global_time < WARM_UP_TIME;){
         global_time++;
-	cout<<global_time<<"========="<<endl;
         // 调度已出发的车辆
         release_capacity(cars_running, global_time);
         // WARM_UP 调度
@@ -188,8 +186,8 @@ int main(int argc, char *argv[])
 	
         for (auto &val : *car_idx){
             for(int i=val.first; i<val.second; i++) {
-		auto car = car_vec[i-idx];
-		get_factor(car,global_time);
+		        auto car = car_vec[i-idx];
+		        get_factor(car,global_time);
                 auto path = graph.get_least_cost_route(car, global_time);
                 if(path->empty()) {
 
@@ -213,8 +211,6 @@ int main(int argc, char *argv[])
     //    int dispatch_size = BATCH_SIZE; //单次调度车辆
 
     vector<CAR*>::iterator start = car_vec.begin();
-    bool is_new_round=false;//判断是否是新的一轮调度
-    int count=0;//缓冲计时器
 
     while (true) {
 
@@ -233,10 +229,10 @@ int main(int argc, char *argv[])
             if (element_idx == -1)
                 continue;
         } else {
-            //剩余车辆不足需要调度的数量，直接全部调度出去
-            element_idx = car_vec.end() - start - 1;
+        //剩余车辆不足需要调度的数量，直接全部调度出去
+        element_idx = car_vec.end() - start - 1;
         }
-	
+
         //释放行驶车辆的占用容量以及删除理论到达车辆
         release_capacity(cars_running, global_time);
 
@@ -244,34 +240,17 @@ int main(int argc, char *argv[])
         //调度车辆
         for (vector<CAR*>::iterator car = start; car != start + element_idx + 1;)
         {
-        //    if(is_new_round){
-              //  count--;
-            //    get_factor((*car),true);
-          //      if(count==0)
-        //        {
-              //      is_new_round=false;
-            //        count=1;
-          //      }
-        //    }
-           // else
-         //   {
-       //         get_factor((*car));
-     //       }
-	    get_factor((*car),global_time);
+	        get_factor((*car),global_time);
 
             //(*car)->capacity_factor=get_factor(*car);
             //需要在内部解决开销容量减少问题，以及记录理论到达各个node的时间
             GRAPH::route_type * result = graph.get_least_cost_route(*car, global_time);
             if (result->empty()) {
                 car++;
-                temp<<"wait"<<endl;
-		        temp<<global_time<<'\t'<<(*car)->speed<<'\t'<<(*car)->id<<endl;
 		        continue;
             } else {
                 write_to_file(result, (*car), fout);
                 cars_running.push_back((*car));
-		        temp<<"go"<<endl;
-		        temp<<global_time<<'\t'<<(*car)->speed<<endl;
                 car=car_vec.erase(car);
 		        element_idx--;
             }
@@ -283,7 +262,6 @@ int main(int argc, char *argv[])
         if(start>=car_vec.end())
         {
             start=car_vec.begin();
-            is_new_round=true;
         }
     }
 /* End of 调度车辆 */
