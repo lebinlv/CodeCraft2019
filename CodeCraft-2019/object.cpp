@@ -3,8 +3,56 @@
 #define ROAD_VECTOR_RESERVE   64     // 为寻路函数返回的vector预分配的空间，建议为路口的数目的一半
 using namespace std;
 
-/********* class GRAPH  *********/
 
+ROAD::ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex) : 
+           id(_id), length(_length), max_speed(_speed), channel(_channel),
+           from(_from), to(_to), isDuplex(_isDuplex)
+{
+    capacity = _length * _channel;
+
+    if(_isDuplex) {
+        forward = new container_t[_channel];
+        backward = new container_t[_channel];
+        for (int i = 0; i < _channel; ++i) {
+            forward[i].reserve(_length);
+            backward[i].reserve(_length);
+        }
+    } else {
+        forward = new container_t[_channel];
+        backward = nullptr;
+        for (int i = 0; i < _channel; ++i){
+            forward[i].reserve(_length);
+        }
+    }
+}
+
+void ROAD::moveOnRoad()
+{
+    for(int i=0; i<channel; ++i){
+        //CAR::CAR_STATE preCarState = -1;
+        int preCarIdx = length;
+
+        for(auto car: forward[i]) {
+            switch (car->state)
+            {
+                case CAR::RUNNING :
+                    if (car->v + car->idx > preCarIdx)
+                        car->state = CAR::WAIT;
+                    break;
+            
+                default:
+                    break;
+            }
+
+        }
+    }
+}
+
+
+
+
+
+/********* class GRAPH  *********/
 int              GRAPH::Node::node_count = 0;
 vector<ROAD *>   GRAPH::Node::pRoad_vec;    //std::vector<Node *>
 
@@ -12,7 +60,7 @@ vector<ROAD *>   GRAPH::Node::pRoad_vec;    //std::vector<Node *>
 
 GRAPH::Node::Node(int _cross_id, ROAD *_pRoad) : cross_id(_cross_id), pRoad(_pRoad)
 {
-    capacity = _pRoad->ini_capacity;
+    capacity = _pRoad->capacity;
     info_idx = node_count++;
     pRoad_vec.push_back(_pRoad);
 }
@@ -27,7 +75,7 @@ GRAPH::GRAPH(int reserve_node_count)
 
 GRAPH::~GRAPH()
 {
-    // free weigth_map
+    // free weight_map
     for(auto &val:weight_map){delete val.second;}
 
     // free graph_map
@@ -102,7 +150,7 @@ GRAPH::route_type * GRAPH::get_least_cost_route(CAR* car, int global_time)
 
         for (auto node : graph_map[record->cross_id]) {
             // 如果这个节点代表的边没有被访问过 且 边的容量大于0，建立__Node实例, 并把它压入优先队列
-            if(visited_map.find(node->cross_id) == visited_map.end() && node->capacity > ROAD_VALID_THREHOLD) {
+            if(visited_map.find(node->cross_id) == visited_map.end() && node->capacity > ROAD_VALID_THRESHOLD) {
                 candidates.push(new __Node(record->cost + p_weight[node->info_idx], node->cross_id, record, node));
             }
         }

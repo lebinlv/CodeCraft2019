@@ -1,4 +1,4 @@
-#ifndef _OBJRCT_H_
+#ifndef _OBJECT_H_
 #define _OBJECT_H_
 
 #include <cstdint>
@@ -12,27 +12,54 @@
 #include <unordered_map>
 
 static float CAPACITY_FACTOR = 0;   //容量因子
-static float ROAD_VALID_THREHOLD = 0;  //当边的容量小于此值时认为该边无效
-
-
-struct ROAD
-{
-    // (id,length,speed,channel,from,to,isDuplex)
-    int id, length, max_speed, channel, from, to;
-    int ini_capacity;
-    bool isDuplex;
-
-    ROAD(){}
-    ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex):
-         id(_id), length(_length), max_speed(_speed), channel(_channel),
-         from(_from), to(_to), isDuplex(_isDuplex) {ini_capacity = _length * _channel;}
-    ROAD(const ROAD &) = delete;
-    ROAD(ROAD &&) = delete;
-    ~ROAD(){}
-};
-
+static float ROAD_VALID_THRESHOLD = 0;  //当边的容量小于此值时认为该边无效
 
 struct CAR;
+
+class ROAD
+{
+  public:
+    int id, length, max_speed, channel, from, to;
+    int capacity;
+    bool isDuplex;
+    typedef std::vector<CAR *> container_t;
+
+  private:
+    // 车辆容器
+    container_t *forward, *backward;
+
+  public:
+    ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex);
+    ROAD() = delete;
+    ROAD(const ROAD &) = delete;
+    ROAD(ROAD &&) = delete;
+    ~ROAD(){ delete [] forward, backward;}
+
+    /**
+     * @brief 获取该道路上进入和离开指定路口的车辆的容器
+     * 
+     * @param cross_id 路口id 
+     * @return std::pair<container_t ,container_t>  .first: 进入本路口的车辆容器； .second: 离开本路口的车辆容器
+     */
+    inline std::pair<container_t* ,container_t*> getContainer(int cross_id) {
+        return cross_id == to ? std::pair<container_t*, container_t*>(forward, backward) : std::pair<container_t*, container_t*>(backward, forward);
+    }
+
+    /**
+     * @brief 调度该道路上的车辆
+     * 
+     */
+    void moveOnRoad();
+
+
+    /**
+     * @brief 移动该道路上指定车道内的车辆
+     * 
+     * @param channel 
+     */
+    void moveInChannel(container_t *container, int channel);
+};
+
 
 
 class GRAPH
@@ -104,7 +131,7 @@ class GRAPH
         __Node *     parent;   // 用于到达终点时回溯得到路径
         Node *       p_Node;
 
-        __Node(double _cost, int _cross_id, __Node* _parent, Node* _p_Node) :
+        __Node(double _cost, int _cross_id, __Node* _parent, Node* _p_Node):
                cost(_cost), cross_id(_cross_id), parent(_parent), p_Node(_p_Node){}
         __Node() = delete;
         __Node(const __Node &) = delete;
@@ -124,8 +151,8 @@ struct CAR
 {
     // (id, from, to, speed, planTime)
     int id, from, to, speed, plan_time;
-    int					start_time;
-    float                 capacity_factor;
+    int   start_time;
+    float capacity_factor;
     struct Past_node {
         GRAPH::Node* node;
         double arrive_time;
@@ -134,11 +161,18 @@ struct CAR
     };
     std::stack<Past_node*>      past_nodes;
 
-    CAR() {}
+    // 车辆的运行状态
+    enum CAR_STATE {WAIT, RUNNING, END};
+    int idx;        // 车在道路上的位置
+    int v;  // 车在道路上的可行速度
+
+    CAR_STATE state;
+
     CAR(int _id, int _from, int _to, int _speed, int _time):
         id(_id), from(_from), to(_to), speed(_speed), plan_time(_time) {}
     CAR(const CAR &) = delete;
     CAR(CAR &&) = delete;
+    CAR() = delete;
     ~CAR() {}
 
     /** 
