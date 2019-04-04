@@ -7,6 +7,7 @@ using namespace std;
 Container::Container(int channel, int length)
 {
     this->channel=channel;
+    this->length=length;
     carInChannel = new container_t [channel];
     for(int i=0; i<channel; ++i) {
         carInChannel[i].reserve(length);
@@ -16,20 +17,72 @@ Container::Container(int channel, int length)
 // TODO: Container::push_back()
 inline bool Container::push_back(CAR* pCar)
 {
-
+    //当前车辆idx还没有变，同时nextroad保存的也就是当前的道路
+    //需要调度完成后运行更新优先队列
+    for (int i=0;i<this->channel;i++)
+    {
+        int s2;
+        CAR* pre_car=this->getCarVec(i).back();
+        if(pre_car->state==CAR::CAR_STATE::END)
+        {
+            if(pre_car->idx==this->length-1)
+               continue;
+            else
+            {
+                s2 = max(0, min(pCar->speed, pCar->next_road->max_speed) - pCar->idx);
+                
+                this->getCarVec(i).push_back(pCar);
+                //这边没有从原来的vector里面把这辆车删掉
+                pCar->idx=length-min(s2,this->length-1-pre_car->idx);
+                pCar->state=CAR::CAR_STATE::END;
+                if(pCar->idx-pre_car->idx==1)
+                    pCar->v=min(pre_car->v,pCar->speed);
+                else
+                    pCar->v=pCar->speed;
+                return true;
+            }
+        }
+        else if(pre_car->state==CAR::CAR_STATE::WAIT)
+        {
+            s2 = max(0, min(pCar->speed, pCar->next_road->max_speed) - pCar->idx);
+            if(s2<=this->length-1-pre_car->idx)
+            {
+                this->getCarVec(i).push_back(pCar);
+                //这边没有从原来的vector里面把这辆车删掉
+                pCar->state=CAR::CAR_STATE::END;
+                pCar->idx=length-min(s2,this->length-1-pre_car->idx);
+                if(pCar->idx-pre_car->idx==1)
+                    pCar->v=min(pre_car->v,pCar->speed);
+                else
+                    pCar->v=pCar->speed;
+                return true;
+            }
+            else
+                return false;
+        }
+    }
+    return false;
 }
 
 // TODO: Container::top()
 inline CAR *Container::top()
 {
-
+    return this->priCar.front();
 }
 
 // TODO: Container::pop()
 inline bool Container::pop()
 {
-
+    if(this->priCar.size()==0)
+        return false;
+    else
+    {
+        this->priCar.pop();
+        return true;
+    }
+    
 }
+
 void Container::update_prior_queue()
 {
     int ch=this->channel;
@@ -104,7 +157,7 @@ void Container::update_prior_queue()
                 }
             }
             //把该车辆放入队列，并取得该车道中的下一辆车，如果没车了，则为NULL，并且finish计数++
-            this->push_back(car_first_array[min_channel]);
+            this->priCar.push(car_first_array[min_channel]);
             idx_array[min_channel]++;
             if(idx_array[min_channel]<size_array[min_channel])
             {
@@ -126,7 +179,7 @@ void Container::update_prior_queue()
         else
         {
             //如果这些车辆中有优先车辆，处理该优先车辆，大致操作如上
-            this->push_back(car_first_array[min_channel]);
+            this->priCar.push(car_first_array[min_channel]);
             idx_array[min_channel]++;
             if(idx_array[min_channel]<size_array[min_channel])
             {

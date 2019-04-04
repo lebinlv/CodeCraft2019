@@ -30,9 +30,11 @@ class Container
     Container(Container &&) = delete;
 
   private:
-    int channel;//后面优先队列需要
+    int channel;//后面优先队列需要，车道数量
+    int length;//道路长度
+
     container_t  *carInChannel;
-    std::priority_queue<CAR*> priCar; // 出路口的车的优先队列
+    std::queue<CAR*> priCar; // 出路口的车的优先队列
 
   public:
     // 获取第 pos 车道的 车辆vector 的引用
@@ -43,8 +45,13 @@ class Container
      * @brief 加入新的车辆
      * 
      * @param pCar 要加入的车辆指针
+     *         length 上个道路的长度
      * @return true 成功加入
      * @return false 加入失败
+     * @notice 这边假设传入的pcar 保留了原来道路上的idx，他的next_road就是当前道路
+     * pCar如果返回成功需要把该车从原来的vector中删除，也就是说，这个函数加入成功后不会自行把这个车从
+     * 原来的vector中删除。
+     * 调度完成后记得运行update_prior_queue
      */
     bool push_back(CAR* pCar);
 
@@ -68,6 +75,7 @@ class Container
      * 但只是单纯的优先顺序，不保证该辆车一定是可以开出去的，
      * 也就是说，top得到的第一辆车
      * 可能会因为他要驶入的道路中存在wait车辆的影响，而无法行驶.
+     * @notice 道路变化之后，也就是调度完成后需要运行该函数，保证优先队列的正确性
      */
     void update_prior_queue();
 
