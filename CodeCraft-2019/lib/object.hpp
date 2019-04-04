@@ -16,17 +16,63 @@ static float ROAD_VALID_THRESHOLD = 0;  //当边的容量小于此值时认为�
 
 struct CAR;
 
+// 
+class Container
+{
+  public:
+    typedef std::vector<CAR *> container_t;
+
+    // 根据车道数和道路长度初始化容器
+    Container(int channel, int length);
+
+    Container() = delete;
+    Container(const Container &) = delete;
+    Container(Container &&) = delete;
+
+  private:
+    container_t  *carInChannel;
+    std::priority_queue<CAR*> priCar; // 出路口的车的优先队列
+
+  public:
+    // 获取第 pos 车道的 车辆vector 的引用
+    inline container_t & operator[](int channel){return carInChannel[channel];}
+    inline container_t & getCarVec(int channel){return carInChannel[channel];}
+
+    /**
+     * @brief 加入新的车辆
+     * 
+     * @param pCar 要加入的车辆指针
+     * @return true 成功加入
+     * @return false 加入失败
+     */
+    bool push_back(CAR* pCar);
+
+    /**
+     * @brief 获取最先行驶的车辆的指针
+     * 
+     * @return 如果所有车辆都不会出路口，返回 nullptr
+     */
+    inline CAR *top();
+
+    /**
+     * @brief 取出第一辆车
+     * 
+     * @return true  成功取出
+     * @return false 取出失败
+     */
+    inline bool pop();
+};
+
 class ROAD
 {
   public:
     int id, length, max_speed, channel, from, to;
     int capacity;
     bool isDuplex;
-    typedef std::vector<CAR *> container_t;
 
   private:
     // 车辆容器
-    container_t *forward, *backward;
+    Container *forward, *backward;
 
   public:
     ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex);
@@ -39,10 +85,10 @@ class ROAD
      * @brief 获取该道路上进入和离开指定路口的车辆的容器
      * 
      * @param cross_id 路口id 
-     * @return std::pair<container_t ,container_t>  .first: 进入本路口的车辆容器； .second: 离开本路口的车辆容器
+     * @return std::pair<container ,container>  .first: 进入本路口的车辆容器； .second: 离开本路口的车辆容器
      */
-    inline std::pair<container_t* ,container_t*> getContainer(int cross_id) {
-        return cross_id == to ? std::pair<container_t*, container_t*>(forward, backward) : std::pair<container_t*, container_t*>(backward, forward);
+    inline std::pair<Container* ,Container*> getContainer(int cross_id) {
+        return cross_id == to ? std::pair<Container*, Container*>(forward, backward) : std::pair<Container*, Container*>(backward, forward);
     }
 
     /**
@@ -55,11 +101,21 @@ class ROAD
     /**
      * @brief 移动该道路上指定车道内的车辆
      * 
-     * @param channel 
+     * @param channel 车道id（从0开始）
      */
     void moveInChannel(container_t *container, int channel);
 };
 
+
+class CROSS
+{
+  public:
+    int id;
+
+
+
+
+};
 
 
 class GRAPH
@@ -165,6 +221,8 @@ struct CAR
     enum CAR_STATE {WAIT, RUNNING, END};
     int idx;        // 车在道路上的位置
     int v;  // 车在道路上的可行速度
+    bool prior;  // 是否优先
+    bool preset; // 
 
     CAR_STATE state;
 

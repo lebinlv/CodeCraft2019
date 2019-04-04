@@ -4,48 +4,46 @@
 using namespace std;
 
 
+Container::Container(int channel, int length)
+{
+    carInChannel = new container_t [channel];
+    for(int i=0; i<channel; ++i) {
+        carInChannel[i].reserve(length);
+    }
+}
+
+// TODO: Container::push_back()
+inline bool Container::push_back(CAR* pCar)
+{
+
+}
+
+// TODO: Container::top()
+inline CAR *Container::top()
+{
+
+}
+
+// TODO: Container::pop()
+inline bool Container::pop()
+{
+
+}
+
+
+
 ROAD::ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex) : 
            id(_id), length(_length), max_speed(_speed), channel(_channel),
            from(_from), to(_to), isDuplex(_isDuplex)
 {
     capacity = _length * _channel;
-
-    if(_isDuplex) {
-        forward = new container_t[_channel];
-        backward = new container_t[_channel];
-        for (int i = 0; i < _channel; ++i) {
-            forward[i].reserve(_length);
-            backward[i].reserve(_length);
-        }
-    } else {
-        forward = new container_t[_channel];
-        backward = nullptr;
-        for (int i = 0; i < _channel; ++i){
-            forward[i].reserve(_length);
-        }
-    }
+    forward = new Container(_channel, _length);
+    backward = _isDuplex ? new Container(_channel, _length) : nullptr;
 }
 
+// TODO: 
 void ROAD::moveOnRoad()
 {
-    for(int i=0; i<channel; ++i){
-        //CAR::CAR_STATE preCarState = -1;
-        int preCarIdx = length;
-
-        for(auto car: forward[i]) {
-            switch (car->state)
-            {
-                case CAR::RUNNING :
-                    if (car->v + car->idx > preCarIdx)
-                        car->state = CAR::WAIT;
-                    break;
-            
-                default:
-                    break;
-            }
-
-        }
-    }
 }
 
 
