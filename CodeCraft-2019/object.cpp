@@ -6,6 +6,7 @@ using namespace std;
 
 Container::Container(int channel, int length)
 {
+    this->channel=channel;
     carInChannel = new container_t [channel];
     for(int i=0; i<channel; ++i) {
         carInChannel[i].reserve(length);
@@ -29,7 +30,127 @@ inline bool Container::pop()
 {
 
 }
+void Container::update_prior_queue()
+{
+    int ch=this->channel;
+    //各个车道数组的索引
+    int *idx_array=new int[ch];
+    for (int i =0 ;i<ch;i++)
+        idx_array=0;
+    //各个车道数组元素数量
+    int *size_array=new int[ch];
+    for (int i =0 ;i<ch;i++)
+        size_array[i]=this->getCarVec(i).size();
+    //已经完成操作的车道数量计数
+    int finish_count=0;
+    
+    //各个车道第一辆车
+    CAR** car_first_array=new CAR*[ch];
 
+    //initialize the car_first_array
+    for(int i=0;i<ch;i++)
+    {
+        if(this->getCarVec(i).size())//if this channel is not empty
+        {
+            car_first_array[i]=this->getCarVec(i)[0];
+        }
+        else//this cahnnel s empty
+        {
+            car_first_array[i]=NULL;
+            finish_count++;        
+        }
+    }
+    //非优先车辆计数，服务循环
+    int count=0;
+    
+    int min_dis=10000;//保存距离路口的最小距离
+    int min_channel=-1;//最小距离对应的车道
+
+    while(true)
+    {
+        //if all finished ,break
+        if(finish_count==ch)
+            break;
+        //如果所有车道中第一辆车中存在优先车辆，得到这些优先车辆中距离路口最近的车辆的索引
+        for(int i=0;i<ch;i++)
+        {
+            if(!car_first_array[i])
+                continue;
+            if(car_first_array[i]->prior)
+            {
+                if(min_dis>car_first_array[i]->idx);
+                {
+                    min_dis=car_first_array[i]->idx;
+                    min_channel=i;
+                }
+                continue;   
+            }
+            count++;
+            
+        }
+
+        //如果这些车辆中没有优先车辆
+        if(count==ch)//now there's no prior car
+        {
+            //得到这些优先车辆中距离路口最近的车辆的索引
+            for(int i=0;i<ch;i++)
+            {
+                if(!car_first_array[i])
+                    continue;
+                if(min_dis>car_first_array[i]->idx);
+                {
+                    min_dis=car_first_array[i]->idx;
+                    min_channel=i;
+                }
+            }
+            //把该车辆放入队列，并取得该车道中的下一辆车，如果没车了，则为NULL，并且finish计数++
+            this->push_back(car_first_array[min_channel]);
+            idx_array[min_channel]++;
+            if(idx_array[min_channel]<size_array[min_channel])
+            {
+                car_first_array[min_channel]=this->getCarVec(min_channel)[idx_array[min_channel]];
+                if(car_first_array[min_channel]->state==CAR::CAR_STATE::END)
+                {
+                    car_first_array[min_channel]=NULL;
+                    finish_count++;
+                }
+            }
+            else
+            {
+                car_first_array[min_channel]=NULL;
+                finish_count++;
+            }
+            count=0;
+            min_dis=10000;
+        }
+        else
+        {
+            //如果这些车辆中有优先车辆，处理该优先车辆，大致操作如上
+            this->push_back(car_first_array[min_channel]);
+            idx_array[min_channel]++;
+            if(idx_array[min_channel]<size_array[min_channel])
+            {
+                car_first_array[min_channel]=this->getCarVec(min_channel)[idx_array[min_channel]];
+                if(car_first_array[min_channel]->state==CAR::CAR_STATE::END)
+                {
+                    car_first_array[min_channel]=NULL;
+                    finish_count++;
+                }
+            }
+            else
+            {
+                car_first_array[min_channel]=NULL;
+                finish_count++;
+            }
+            count=0;
+            min_dis=10000;
+        }
+        
+    }
+    delete idx_array;
+    delete size_array;
+    delete car_first_array;
+}
 
 
 ROAD::ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, bool _isDuplex) : 
@@ -44,8 +165,93 @@ ROAD::ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, b
 // TODO: 
 void ROAD::moveOnRoad()
 {
+    //取得车道数量
+    int channels=this->channel;
+    //车道长度
+    for (int i=0;i<channels;i++)
+    {
+        vector<CAR*> & carVec = this->backward->getCarVec(channels);
+        dispatch_one_channel(carVec);
+        vector<CAR*> & carVec = this->forward->getCarVec(channels);
+        dispatch_one_channel(carVec);
+    }
 }
 
+void dispatch_one_channel(std::vector<CAR*> & carVec)
+{
+    int len=carVec.size();
+    CAR* pre_car=NULL;
+    int s2;//the length that car can drive in next road
+
+    for (int i=0;i<len;i++)
+    {
+        //car can pass 
+        if(i==0)//for the
+        {
+            //compile algorithm, get next road 
+            //===========================
+            //carVec[i]->next_road=get_next_road();
+            //===========================
+            if(carVec[i]->v>i) 
+            {
+                s2 = max(0, std::min(carVec[i]->speed, carVec[i]->next_road->max_speed) - i);
+                if(s2>0)
+                {
+                    carVec[i]->state=CAR::CAR_STATE::WAIT;
+                    pre_car=carVec[i];
+                    continue;
+                }
+                else//car canot pass cross
+                {
+                    carVec[i]->state=CAR::CAR_STATE::END;
+                    pre_car=carVec[i];
+                    carVec[i]->idx=0;
+                    continue;
+                }
+            }
+            else
+            {
+                carVec[i]->state=CAR::CAR_STATE::END;
+                pre_car=carVec[i];
+                carVec[i]->idx-=carVec[i]->v;
+                continue;
+            } 
+        }
+        else
+        {
+            //car can drive without front car's influence
+            if(carVec[i]->v<(pre_car->idx-carVec[i]->idx))
+            {
+                carVec[i]->state=CAR::CAR_STATE::END;
+                carVec[i]->idx-=carVec[i]->v;
+                pre_car=carVec[i];
+                continue;
+            }
+            else//car can drive with front car's influence
+            {
+                //if the front car is end
+                if(pre_car->state==CAR::CAR_STATE::END)
+                {    
+                    carVec[i]->state=CAR::CAR_STATE::END;
+                    carVec[i]->idx-=pre_car->idx+1;
+                    carVec[i]->v=min(carVec[i]->v,pre_car->v);
+                    pre_car=carVec[i];
+                    continue;
+                }
+                //if front car is wait
+                else if(pre_car->state==CAR::CAR_STATE::WAIT)
+                {    
+                    carVec[i]->state=CAR::CAR_STATE::WAIT;
+                    pre_car=carVec[i];
+                    continue;
+                }
+            }
+            
+        }
+        
+        
+    }
+}
 
 
 

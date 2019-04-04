@@ -30,6 +30,7 @@ class Container
     Container(Container &&) = delete;
 
   private:
+    int channel;//后面优先队列需要
     container_t  *carInChannel;
     std::priority_queue<CAR*> priCar; // 出路口的车的优先队列
 
@@ -61,6 +62,15 @@ class Container
      * @return false 取出失败
      */
     inline bool pop();
+
+    /**
+     * @brief 更新优先队列，可以保证队列里面的车辆都是wait状态，
+     * 但只是单纯的优先顺序，不保证该辆车一定是可以开出去的，
+     * 也就是说，top得到的第一辆车
+     * 可能会因为他要驶入的道路中存在wait车辆的影响，而无法行驶.
+     */
+    void update_prior_queue();
+
 };
 
 class ROAD
@@ -97,13 +107,25 @@ class ROAD
      */
     void moveOnRoad();
 
-
     /**
      * @brief 移动该道路上指定车道内的车辆
      * 
      * @param channel 车道id（从0开始）
      */
-    void moveInChannel(container_t *container, int channel);
+    void moveInChannel(Container::container_t *container, int channel);
+
+
+    /**
+     * @brief 移动该道路上指定车道内的车辆
+     * 
+     * @param 车道的vec，主要是为了moveOnRoad函数服务
+     * 
+     * @notice 
+     * 该函数内部需要得到下一条道路，目前假设该道路会赋值给car的next_road指针。
+     * 需要寻路函数完成后再考虑。
+     */
+    void dispatch_one_channel(std::vector<CAR*> & carVec);
+    
 };
 
 
@@ -223,6 +245,7 @@ struct CAR
     int v;  // 车在道路上的可行速度
     bool prior;  // 是否优先
     bool preset; // 
+    ROAD *next_road;
 
     CAR_STATE state;
 
