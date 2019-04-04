@@ -77,6 +77,12 @@ inline bool Container::pop()
         return false;
     else
     {
+        //得到优先队列的第一个元素
+        int channel_idx=this->priCar.front()->channel_idx;
+        //得到这辆车所在的车道
+        vector<CAR*> & temp=this->getCarVec(channel_idx);
+        //删除该车道的第一辆车
+        temp.erase(temp.begin());
         this->priCar.pop();
         return true;
     }
@@ -157,7 +163,9 @@ void Container::update_prior_queue()
                 }
             }
             //把该车辆放入队列，并取得该车道中的下一辆车，如果没车了，则为NULL，并且finish计数++
+            car_first_array[min_channel]->channel_idx=min_channel;
             this->priCar.push(car_first_array[min_channel]);
+
             idx_array[min_channel]++;
             if(idx_array[min_channel]<size_array[min_channel])
             {
@@ -179,6 +187,7 @@ void Container::update_prior_queue()
         else
         {
             //如果这些车辆中有优先车辆，处理该优先车辆，大致操作如上
+            car_first_array[min_channel]->channel_idx=min_channel;
             this->priCar.push(car_first_array[min_channel]);
             idx_array[min_channel]++;
             if(idx_array[min_channel]<size_array[min_channel])

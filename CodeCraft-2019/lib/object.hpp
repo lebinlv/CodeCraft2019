@@ -249,6 +249,7 @@ struct CAR
 
     // 车辆的运行状态
     enum CAR_STATE {WAIT, RUNNING, END};
+    int channel_idx;//所处在的车道序号，目前只是服务pop,也就是说只要初始化为0就好
     int idx;        // 车在道路上的位置
     int v;  // 车在道路上的可行速度
     bool prior;  // 是否优先
