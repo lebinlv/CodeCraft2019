@@ -34,7 +34,7 @@ class Container
     int length;//道路长度
 
     container_t  *carInChannel;
-    std::queue<CAR*> priCar; // 出路口的车的优先队列
+    std::priority_queue<CAR*, vector<CAR*>, CAR::Compare> priCar; // 出路口的车的优先队列
 
   public:
     // 获取第 pos 车道的 车辆vector 的引用
@@ -77,7 +77,7 @@ class Container
      * 可能会因为他要驶入的道路中存在wait车辆的影响，而无法行驶.
      * @notice 道路变化之后，也就是调度完成后需要运行该函数，保证优先队列的正确性
      */
-    void update_prior_queue();
+    void update_prior_queue(int);
 
 };
 
@@ -132,7 +132,7 @@ class ROAD
      * 该函数内部需要得到下一条道路，目前假设该道路会赋值给car的next_road指针。
      * 需要寻路函数完成后再考虑。
      */
-    void dispatch_one_channel(std::vector<CAR*> & carVec);
+    static void dispatch_one_channel(std::vector<CAR*> & carVec);
     
 };
 
@@ -273,8 +273,9 @@ struct CAR
      */
     struct Compare {
         bool operator()(const CAR* a, const CAR* b) {
-            return (a->plan_time == b->plan_time) ?
-                   (a->speed < b->speed) : (a->plan_time > b->plan_time);
+          if(a->prior == b->prior)
+            return (a->idx==b->idx)?a->channel_idx>b->channel_idx:a->idx>b->idx;
+          else return a->prior < b->prior;
         }
         bool operator()(const CAR & a, const CAR & b) {
             return (a.plan_time == b.plan_time) ?

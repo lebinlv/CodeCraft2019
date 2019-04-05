@@ -67,7 +67,7 @@ inline bool Container::push_back(CAR* pCar)
 // TODO: Container::top()
 inline CAR *Container::top()
 {
-    return this->priCar.front();
+    return priCar.top();
 }
 
 // TODO: Container::pop()
@@ -78,7 +78,7 @@ inline bool Container::pop()
     else
     {
         //得到优先队列的第一个元素
-        int channel_idx=this->priCar.front()->channel_idx;
+        int channel_idx=this->priCar.top()->channel_idx;
         //得到这辆车所在的车道
         vector<CAR*> & temp=this->getCarVec(channel_idx);
         //删除该车道的第一辆车
@@ -86,132 +86,12 @@ inline bool Container::pop()
         this->priCar.pop();
         return true;
     }
-    
 }
 
-void Container::update_prior_queue()
+void Container::update_prior_queue(int channel_idx)
 {
-    int ch=this->channel;
-    //各个车道数组的索引
-    int *idx_array=new int[ch];
-    for (int i =0 ;i<ch;i++)
-        idx_array=0;
-    //各个车道数组元素数量
-    int *size_array=new int[ch];
-    for (int i =0 ;i<ch;i++)
-        size_array[i]=this->getCarVec(i).size();
-    //已经完成操作的车道数量计数
-    int finish_count=0;
-    
-    //各个车道第一辆车
-    CAR** car_first_array=new CAR*[ch];
-
-    //initialize the car_first_array
-    for(int i=0;i<ch;i++)
-    {
-        if(this->getCarVec(i).size())//if this channel is not empty
-        {
-            car_first_array[i]=this->getCarVec(i)[0];
-        }
-        else//this cahnnel s empty
-        {
-            car_first_array[i]=NULL;
-            finish_count++;        
-        }
-    }
-    //非优先车辆计数，服务循环
-    int count=0;
-    
-    int min_dis=10000;//保存距离路口的最小距离
-    int min_channel=-1;//最小距离对应的车道
-
-    while(true)
-    {
-        //if all finished ,break
-        if(finish_count==ch)
-            break;
-        //如果所有车道中第一辆车中存在优先车辆，得到这些优先车辆中距离路口最近的车辆的索引
-        for(int i=0;i<ch;i++)
-        {
-            if(!car_first_array[i])
-                continue;
-            if(car_first_array[i]->prior)
-            {
-                if(min_dis>car_first_array[i]->idx);
-                {
-                    min_dis=car_first_array[i]->idx;
-                    min_channel=i;
-                }
-                continue;   
-            }
-            count++;
-            
-        }
-
-        //如果这些车辆中没有优先车辆
-        if(count==ch)//now there's no prior car
-        {
-            //得到这些优先车辆中距离路口最近的车辆的索引
-            for(int i=0;i<ch;i++)
-            {
-                if(!car_first_array[i])
-                    continue;
-                if(min_dis>car_first_array[i]->idx);
-                {
-                    min_dis=car_first_array[i]->idx;
-                    min_channel=i;
-                }
-            }
-            //把该车辆放入队列，并取得该车道中的下一辆车，如果没车了，则为NULL，并且finish计数++
-            car_first_array[min_channel]->channel_idx=min_channel;
-            this->priCar.push(car_first_array[min_channel]);
-
-            idx_array[min_channel]++;
-            if(idx_array[min_channel]<size_array[min_channel])
-            {
-                car_first_array[min_channel]=this->getCarVec(min_channel)[idx_array[min_channel]];
-                if(car_first_array[min_channel]->state==CAR::CAR_STATE::END)
-                {
-                    car_first_array[min_channel]=NULL;
-                    finish_count++;
-                }
-            }
-            else
-            {
-                car_first_array[min_channel]=NULL;
-                finish_count++;
-            }
-            count=0;
-            min_dis=10000;
-        }
-        else
-        {
-            //如果这些车辆中有优先车辆，处理该优先车辆，大致操作如上
-            car_first_array[min_channel]->channel_idx=min_channel;
-            this->priCar.push(car_first_array[min_channel]);
-            idx_array[min_channel]++;
-            if(idx_array[min_channel]<size_array[min_channel])
-            {
-                car_first_array[min_channel]=this->getCarVec(min_channel)[idx_array[min_channel]];
-                if(car_first_array[min_channel]->state==CAR::CAR_STATE::END)
-                {
-                    car_first_array[min_channel]=NULL;
-                    finish_count++;
-                }
-            }
-            else
-            {
-                car_first_array[min_channel]=NULL;
-                finish_count++;
-            }
-            count=0;
-            min_dis=10000;
-        }
-        
-    }
-    delete idx_array;
-    delete size_array;
-    delete car_first_array;
+    if(carInChannel[channel_idx].front()->state != CAR::END)
+        priCar.push(carInChannel[channel_idx].front());
 }
 
 
