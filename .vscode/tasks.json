@@ -18,7 +18,7 @@
                 "-std=c++11",
                 "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
                 "${workspaceFolder}/CodeCraft-2019/object.cpp",
-                "${workspaceFolder}/CodeCraft-2019/function.cpp",
+                //"${workspaceFolder}/CodeCraft-2019/function.cpp",
                 "-o",
                 "${workspaceFolder}/bin/CodeCraft-2019"
             ]
@@ -38,7 +38,7 @@
                 "-std=c++11",
                 "${workspaceFolder}/CodeCraft-2019/CodeCraft-2019.cpp",
                 "${workspaceFolder}/CodeCraft-2019/object.cpp",
-                "${workspaceFolder}/CodeCraft-2019/function.cpp",
+                //"${workspaceFolder}/CodeCraft-2019/function.cpp",
                 "-o",
                 "${workspaceFolder}/bin/CodeCraft-2019"
             ],
