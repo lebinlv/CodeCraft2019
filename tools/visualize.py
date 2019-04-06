@@ -122,8 +122,7 @@ class ROAD(object):
         elif crossId == self.to_ and pr == 'receive':
             return 'backward'
         else:
-            pass
-            #print("Keywords mistake in CAR.chooseAbsoluteBucket()")
+            print("Keywords mistake in CAR.chooseAbsoluteBucket()")
     def setBucket(self,crossId):
         bucket = self.chooseAbsoluteBucket(crossId, 'provide')
         if bucket == 'forward':
@@ -206,8 +205,7 @@ class ROAD(object):
     #
     def firstPriorityCar(self):
         if self.provideBucket is None:
-            pass
-            #print("Please do CAR.setBucket() first!")
+            print("Please do CAR.setBucket() first!")
         while self.px[0] <  self.length_:
             carId = self.provideBucket[self.px[0]][self.py[0]]
             if carId is not None and CARDICT[carId].__state__() != 2:
@@ -224,8 +222,7 @@ class ROAD(object):
         return -1
     def firstPriorityCarAct(self,action):
         if self.provideBucket is None:
-            pass
-            #print("Please do CAR.setBucket() first!")
+            print("Please do CAR.setBucket() first!")
         if action == 0:
             self.provideBucket[self.px[0]][self.py[0]] = None
             self.provideNum[0] -= 1
@@ -239,8 +236,7 @@ class ROAD(object):
     #
     def receiveCar(self,carId):
         if self.receiveBucket is None:
-            pass
-            #print("Please do CAR.setBucket() first!")
+            print("Please do CAR.setBucket() first!")
         car = CARDICT[carId]
         leftX = min(self.speed_, car.__speed__()) - car.__x__()
         nextCrossId = self.from_ if car.__nextCrossId__() != self.from_ else self.to_
@@ -459,8 +455,7 @@ class CROSS(object):
             roadId = CARDICT[carId].__nextRoad__()
             road = ROADDICT[roadId]
             if roadId not in self.receiver:
-                pass
-                #print("Car(%d).Road(%d) not in cross(%d).function:class.outOfCarport"%(carId,roadId,self.id_))
+                print("Car(%d).Road(%d) not in cross(%d).function:class.outOfCarport"%(carId,roadId,self.id_))
             act = road.receiveCar(carId)
             if act!=0:
                 self.leftCars.append(self.readyCars[i])
@@ -565,7 +560,7 @@ class simulation(object):
                 if cross.__update__() or cross.__done__():
                     self.dead = False
             unfinishedCross = nextCross
-            assert self.dead is False#, print("dead lock in", unfinishedCross)
+            assert self.dead is False, print("dead lock in", unfinishedCross)
         #print("car pulling away from carport")
         for i in range(CROSSNAMESPACE.__len__()):
             crossId = CROSSNAMESPACE[i]
@@ -578,7 +573,7 @@ class simulation(object):
         self.step()
         visualize.drawMap()
         if CARDISTRIBUTION[2]==CARNAMESPACE.__len__():
-            #print(CARDISTRIBUTION[2])
+            print(CARDISTRIBUTION[2])
             return
         if self.dead:
             return
@@ -646,8 +641,7 @@ class visualization(object):
         elif roadDirection==3:
             return x-1,y
         else:
-            pass
-            #print("Cross(%d) don't interact with road(%d)"%(self.id_,roadId))
+            print("Cross(%d) don't interact with road(%d)"%(self.id_,roadId))
     #
     # draw functions
     #
@@ -662,6 +656,7 @@ class visualization(object):
         # plot info
         self.plotInfo(img)
         cv.imwrite(self.savePath+'/%d.jpg'%TIME[0],img)
+        #cv.imshow("image", img)
     def plotCross(self,crossId,img):
         x, y = CROSSDICT[crossId].__mapLoc__()
         cv.circle(img,(x,y),self.crossRadius,color=self.crossColor,thickness=-1,lineType=-1)
@@ -830,7 +825,7 @@ def main():
         route = [int(roadId) for roadId in  line[2:]]
         CARDICT[carId].simulateInit(planTime_,route)
         count+=1
-    #print("There are %d cars' route preinstalled"%count)
+    print("There are %d cars' route preinstalled"%count)
     CARDISTRIBUTION[0] = CARNAMESPACE.__len__()
     # **** cross initialization ****#
     for carId in CARNAMESPACE:

@@ -73,7 +73,7 @@
         {
             "label": "Visualize",
             "type": "shell",
-            "command": "python2",
+            "command": "python3",
             "args": [
                 "${workspaceFolder}/tools/visualize.py",
                 "${workspaceFolder}/config/car.txt",
