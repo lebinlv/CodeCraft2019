@@ -33,8 +33,6 @@ void write_to_file(std::vector<GRAPH::Node*> * tem_vec, CAR * car, std::ofstream
 }
 
 
-
-
 WARM_UPer::WARM_UPer(int plan_time_record[], int end_plan_time) : _end_plan_time(end_plan_time)
 {
     int count = 0;
@@ -84,7 +82,7 @@ void WARM_UPer::warm_up_end(std::vector<CAR *> & car_vec)
 void get_factor(CAR* car,int time){
     if(time<175)
     {
-        car->capacity_factor=0.48;
+        car->capacity_factor=0.5;
     }
     else if(time<325)
     {

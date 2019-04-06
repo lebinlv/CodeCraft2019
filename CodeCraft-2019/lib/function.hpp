@@ -9,7 +9,7 @@ void release_capacity(std::list<CAR *> &car_running, int global_time);
 //输出answer文件
 void write_to_file(std::vector<GRAPH::Node *> *tem_vec, CAR *car, std::ofstream &fout);
 
-// WRAM_UP 调度器
+// WARM_UP 调度器
 class WARM_UPer
 {
   private:
