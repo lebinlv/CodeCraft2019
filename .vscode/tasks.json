@@ -62,11 +62,25 @@
             "type": "shell",
             "command": "python3",
             "args": [
-                "${workspaceFolder}/simulator/simulator.py",
+                "${workspaceFolder}/tools/simulator.py",
                 "${workspaceFolder}/config/car.txt",
                 "${workspaceFolder}/config/road.txt",
                 "${workspaceFolder}/config/cross.txt",
                 "${workspaceFolder}/config/answer.txt"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Visualize",
+            "type": "shell",
+            "command": "python2",
+            "args": [
+                "${workspaceFolder}/tools/visualize.py",
+                "${workspaceFolder}/config/car.txt",
+                "${workspaceFolder}/config/road.txt",
+                "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/presetAnswer.txt",
+                "${workspaceFolder}/config/"
             ],
             "problemMatcher": []
         }
