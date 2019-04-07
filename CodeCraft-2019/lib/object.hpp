@@ -15,7 +15,85 @@
 #include "define.hpp"
 
 
-struct CAR;
+class Container;
+
+struct CAR
+{
+    // 车辆的运行状态
+    enum CAR_STATE {WAIT, END};
+
+    int id, from, to, speed, planTime;
+    bool isPrior, isPreset;
+
+    // 该车当前所在车道， 该车在上一道路中的车道;
+    // 车在当前道路上的位置, `idx ~ [0, length-1]`, 越小表示离出口越近;
+    // 车在当前道路上的速度;
+    int currentChannel, preChannel, currentIdx, currentSpeed;
+
+    // TODO: 路径规划函数在为车规划出下一条道路后，应计算出车在下一条道路上的速度nextSpeed, 并将 `getNewRoad` 置为 `true`
+    int nextSpeed;
+    bool getNewRoad;
+
+    // 车的运行状态
+    CAR_STATE state;
+
+    // 车的实际出发时间
+    int startTime;
+
+    // 记录该车辆的行驶路线
+    std::vector<Container *> route;
+
+
+    CAR(int _id, int _from, int _to, int _speed, int _time, bool _isPrior, bool _isPreset):
+        id(_id), from(_from), to(_to), speed(_speed), planTime(_time),
+        isPrior(_isPrior), isPreset(_isPreset){
+            currentChannel = preChannel = currentIdx = currentSpeed = nextSpeed = startTime = 0;
+            getNewRoad = false;
+            route.reserve(GARAGE_RESERVE_SIZE);
+    }
+    ~CAR() {}
+
+    CAR(const CAR &) = delete;
+    CAR(CAR &&) = delete;
+    CAR() = delete;
+
+    /**
+     * @brief 当车辆进入下一条道路时，调用本函数更新车辆信息
+     * 
+     * @param newSpeed  车辆在下一条道路上的行驶速度；
+     * @param newIdx    车辆在下一条道路上的初始位置
+     * @param newChannel 车辆在下一条道路上的车道；
+     */
+    inline void enterNewRoad(int newIdx, int newChannel) {
+        currentSpeed = nextSpeed;
+        currentIdx = newIdx;
+        state = END;
+        getNewRoad = false;
+        preChannel = currentChannel;
+        currentChannel = newChannel;
+    }
+
+    // 车辆出路口时的优先比较函数，服务于 priority_queue
+    struct CompareWhenTurn {
+        bool operator()(CAR* a, CAR* b) {
+          if (a->isPrior == b->isPrior) //如果优先级相同
+            // 如果位置相同，则车道小的优先，否则位置小的优先
+            return (a->currentIdx == b->currentIdx) ? a->currentChannel > b->currentChannel : a->currentIdx > b->currentIdx;
+          else // 如果优先级不同，则优先级高的优先
+            return a->isPrior < b->isPrior;
+        }
+    };
+
+    // 车辆上路的优先级比较函数，服务于sort
+    //排序优先级第一，id第二。优先级高的放在前面，id小的放在前面
+    struct ComparaInGarage{
+        bool operator()(CAR* a, CAR* b) {
+            return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
+        }
+    };
+};
+
+
 struct CROSS;
 
 // 单侧道路
@@ -31,20 +109,21 @@ class Container
     int roadId, channel, length, maxSpeed, nextCrossId, capacity;
 
     // turn_to[0], [1], [2] 分别指向 从当前道路右转、左转、直行后 到达的Container
-    Container *turn_to[3] = {nullptr, nullptr, nullptr};
+    Container *turnTo[3] = {nullptr, nullptr, nullptr};
 
     // opposite[0], [1], [2] 分别指向 当前道路的右边、左边、前方道路中 与当前逆向的Container
     Container *opposite[3] = {nullptr, nullptr, nullptr};
 
     // 指向该道路的起点路口、终点路口的指针
-    CROSS *from, *to;
+    CROSS *startCross, *endCross;
 
     int infoIdx;
     static int containerCount;
+    double probability; //道路的概率，服务于寻路方法
 
   private:
     container_t *carInChannel; // 构造函数中使用 new [] 生成
-    std::priority_queue<CAR *> priCar; // 出路口的车的优先队列
+    std::priority_queue<CAR *, std::vector<CAR *>, CAR::CompareWhenTurn> priCar; // 出路口的车的优先队列
 
     /**
      * @brief 调度指定channel内的车辆; 仅每时刻第一次调度时使用；
@@ -75,6 +154,13 @@ class Container
         for(int i=0; i<channel; i++) size+=carInChannel[i].size();
         return size;
     }
+
+    /**
+     * @brief 寻找路径
+     * 
+     * @nitice 需要在道路上调用，传入一个car，之后会对car的route vector进行幅值
+     */
+    void searchRoad(CAR *car);
 
     // 获取第 pos 车道的 车辆vector 的引用, `pos~[0, channel]`
     inline container_t &getCarVec(int pos){return carInChannel[pos];}
@@ -199,12 +285,19 @@ struct CROSS
     // 离开该路口的Container指针, 无序排列
     std::vector<Container *>  awayRoadVec;
     // 车库，只用于发车...
-    std::vector<CAR *> garage;
+    std::deque<CAR *> garage;
 
   private:
     // 路由表的索引@release： uint32_t    | speed 6bit(0~63) | removeRoadId 14bit(0~16383) | 目的crossId 12bit(0~4095) |
     // 路由表的索引@debug： uint32_t    speed*1e8 + removeRoadId*1e4 + 目的crossId
     map_type<uint32_t, routeInfo_t> routeTable;
+
+    /**
+     * @brief 更新路由表的内部实现
+     * 
+     * @param speed 车速（不同的车速具有不同的路由表）
+     * @param removeRoadId （对于要转向的车，查询路由表时要排除车辆来的道路）
+     */
     void updateRouteTableInternall(int speed, int removeRoadId);
 
   public:
@@ -220,6 +313,9 @@ struct CROSS
     CROSS() = delete;
     CROSS(const CROSS &) = delete;
     CROSS(CROSS &&) = delete;
+
+
+    //inline void sortCarInGarage(){sort(garage.begin(),garage.end(),CAR::ComparaInGarage);}
 
     /**
      * @brief 更新路由表，在将所有信息从文件中读取完毕后，必须调用此函数更新路由表
@@ -249,10 +345,23 @@ struct CROSS
      * @param _to   车辆要转去的道路的id
      * @return int  右转：0， 左转：1， 直行：0
      */
-    inline int getTurnDirection(int _from, int _to){
-        return turnMap[MERGE(_from, _to)];
-    }
+    inline int getTurnDirection(int _from, int _to) { return turnMap[MERGE(_from, _to)];}
 
+    /*
+    * @brief 该函数分为两个内容，调度优先车辆与非优先车辆，具体使用见官方伪代码
+    * @notice 这边需要garage已经排序完成，优先级第一，id第二。
+    * @param 第一个是是否是优先车辆调度，按照伪代码那边来
+    * 第二个是全局时间
+    */
+    void driveCarInitList(bool is_prior, int global_time);
+
+    /**
+     * @brief 为车辆计算下一条路线
+     * 
+     * @param current_road_id 车辆当前所在道路id，如果是上路车辆，则current_road_id = -1
+     * @return Container* 下一条道路的指针
+     */
+    Container *searchRoadForCar(int current_road_id);
 };
 
 
@@ -274,68 +383,5 @@ struct GRAPH
     void calculateCostMap();
 };
 
-
-struct CAR
-{
-    // 车辆的运行状态
-    enum CAR_STATE {WAIT, END};
-
-    int id, from, to, speed, planTime;
-    bool isPrior, isPreset;
-
-    // 该车当前所在车道， 该车在上一道路中的车道;
-    // 车在当前道路上的位置, `idx ~ [0, length-1]`, 越小表示离出口越近;
-    // 车在当前道路上的速度;
-    int currentChannel, preChannel, currentIdx, currentSpeed;
-
-    // TODO: 路径规划函数在为车规划下一条道路时，应计算出车在道路上的速度nextSpeed, 并将 `getNewRoad` 置为 `True`
-    int nextSpeed;
-    bool getNewRoad;
-
-    // 车的运行状态
-    CAR_STATE state;
-
-    // 车的实际出发时间
-    int startTime;
-
-    // 记录该车辆的行驶路线
-    std::vector<Container *> route;
-
-
-    CAR(int _id, int _from, int _to, int _speed, int _time, bool _isPrior, bool _isPreset):
-        id(_id), from(_from), to(_to), speed(_speed), planTime(_time),
-        isPrior(_isPrior), isPreset(_isPreset) {route.reserve(GARAGE_RESERVE_SIZE);}
-    ~CAR() {}
-
-    CAR(const CAR &) = delete;
-    CAR(CAR &&) = delete;
-    CAR() = delete;
-
-    /**
-     * @brief 当车辆进入下一条道路时，调用本函数更新车辆信息
-     * 
-     * @param newSpeed  车辆在下一条道路上的行驶速度；
-     * @param newIdx    车辆在下一条道路上的初始位置
-     * @param newChannel 车辆在下一条道路上的车道；
-     */
-    inline void enterNewRoad(int newIdx, int newChannel) {
-        speed = nextSpeed;
-        currentIdx = newIdx;
-        state = END;
-        getNewRoad = false;
-        preChannel = currentChannel;
-        currentChannel = newChannel;
-    }
-
-    struct Compare {
-        bool operator()(CAR* a, CAR* b) {
-          if (a->isPrior == b->isPrior) //如果优先级相同
-            // 如果位置相同，则车道小的优先，否则位置小的优先
-            return (a->currentIdx == b->currentIdx) ? a->currentChannel > b->currentChannel : a->currentIdx > b->currentIdx;
-          else // 如果优先级不同，则优先级高的优先
-            return a->isPrior < b->isPrior;
-        }
-    };
-};
 
 #endif

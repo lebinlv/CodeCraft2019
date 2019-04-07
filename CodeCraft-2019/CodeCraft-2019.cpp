@@ -23,13 +23,6 @@ map_type<int, ROAD *> roadMap;
  */
 map_type<int, CROSS *> crossMap;
 
-/**
- * @brief  按 cross id 升序排列的 `CROSS*`;
- * @Attention:  you should delete `CROSS*` in `crossVec` manually
- */
-vector<CROSS *> crossVec;
-
-map_type<int, CAR*> presetCarMap;
 
 /**
  * @brief 长度为 `SPEED_DETECT_ARRAY_LENGTH`(比最大车速大1) 数组，用于标记有多少种车速
@@ -40,8 +33,15 @@ static int global_time = 0; //全局时间
 int main(int argc, char *argv[])
 {
     auto __start_time = std::chrono::steady_clock::now();
-
     std::ios::sync_with_stdio(false);
+
+    /**
+     * @brief  按 cross id 升序排列的 `CROSS*`;
+     * @Attention:  you should delete `CROSS*` in `crossVec` manually
+     */
+    vector<CROSS *> crossVec;
+
+    map_type<int, CAR*> presetCarMap;
 
 /* SDK code */
     cout << "Begin" << endl;
@@ -182,10 +182,16 @@ int main(int argc, char *argv[])
 /* END of read configuration from file */
 
 
-/* 计算路由表 */
+/* 计算路由表,并对车库内车辆排序 */
     graph.calculateCostMap();
-    for(auto val : crossVec){val->updateRouteTable();}
-/* End of 计算路由表 */
+    for(auto val : crossVec){
+        val->updateRouteTable();
+
+        // 车辆上路的优先级比较函数，优先车辆优先级最高，其次考虑车辆id。优先级高的放在前面，id小的放在前面
+        sort(val->garage.begin(), val->garage.end(), 
+             [](CAR *a, CAR *b) -> bool {return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;});
+    }
+/* End of 计算路由表，并对车库内车辆排序 */
 
 
 /* 打开输出文件*/

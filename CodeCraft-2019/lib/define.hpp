@@ -40,11 +40,17 @@
 
     // 将两个 `road_id` 合并为一个全局唯一的 id
     #define MERGE(a, b) (((a)*10000)+(b))
+
+    // 路由表的索引： uint32_t    speed*1e8 + removeRoadId*1e4 + 目的crossId
+    #define ROUTEID(a, b, c)((a)*1e8+(b)*1e4+(c))
 #else
     // `std::map`为有序容器，便于debug，但查找效率低于hash，正式代码中应改为`std::unordered_map`
     #define map_type std::unordered_map
     // 将两个 id 合并为一个全局唯一的 id
     #define MERGE(a, b) (((a)<<16)|(b))
+
+    // 路由表的索引： uint32_t    | speed 6bit(0~63) | removeRoadId 14bit(0~16383) | 目的crossId 12bit(0~4095) |
+    #define ROUTEID(a, b, c) ( (((a)<<26)|((b)<<12)) | (c) )
 #endif
 
 
