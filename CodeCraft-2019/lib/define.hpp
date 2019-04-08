@@ -26,6 +26,8 @@
 
   #define CAR_ROUTE_VECTOR_RESERVE_SIZE 24
 
+  #define ROAD_VECTOR_RESERVE_SIZE 256
+
   // 为减少磁盘IO操作次数，优化速度，为输出文件answer.txt预分配空间，单位：KB
   #define OUT_FILE_RESERVE_SPACE 1024 // char out_file_buffer[OUT_FILE_RESERVE_SPACE*1024]; fout.rdbuf()->pubsetbuf(out_file_buffer, OUT_FILE_RESERVE_SPACE*1024);
 

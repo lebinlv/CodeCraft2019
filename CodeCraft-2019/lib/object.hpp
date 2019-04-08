@@ -30,8 +30,7 @@ struct CAR
     // 车在当前道路上的速度;
     int currentChannel, preChannel, currentIdx, currentSpeed;
 
-    // TODO: 路径规划函数在为车规划出下一条道路后，应计算出车在下一条道路上的速度nextSpeed, 并将 `getNewRoad` 置为 `true`
-    int nextSpeed;
+    int nextSpeed, nextRoadId;
     bool getNewRoad;
 
     // 车的运行状态
@@ -48,6 +47,7 @@ struct CAR
         id(_id), from(_from), to(_to), speed(_speed), planTime(_time),
         isPrior(_isPrior), isPreset(_isPreset){
             currentChannel = preChannel = currentIdx = currentSpeed = nextSpeed = startTime = 0;
+            state = END;
             getNewRoad = false;
             route.reserve(GARAGE_RESERVE_SIZE);
     }
@@ -71,6 +71,7 @@ struct CAR
         getNewRoad = false;
         preChannel = currentChannel;
         currentChannel = newChannel;
+        if(isPreset) route.pop_back();
     }
 
     // 车辆出路口时的优先比较函数，服务于 priority_queue
@@ -111,7 +112,7 @@ class Container
     // turn_to[0], [1], [2] 分别指向 从当前道路右转、左转、直行后 到达的Container
     Container *turnTo[3] = {nullptr, nullptr, nullptr};
 
-    // opposite[0], [1], [2] 分别指向 当前道路的右边、左边、前方道路中 与当前逆向的Container
+    // opposite[0], [1], [2] 分别指向右边、左边、前方道路中与当前Container进入同一路口的Container
     Container *opposite[3] = {nullptr, nullptr, nullptr};
 
     // 指向该道路的起点路口、终点路口的指针
@@ -150,7 +151,7 @@ class Container
      * @return int 
      */
     int size(){
-        int size;
+        int size=0;
         for(int i=0; i<channel; i++) size+=carInChannel[i].size();
         return size;
     }
@@ -167,7 +168,7 @@ class Container
     inline container_t &operator[](int pos) { return carInChannel[pos]; }
 
     /**
-     * @brief 加入新的车辆
+     * @brief 加入新的车辆，若成功加入，则会更新 pCar的`currentChannel`,`currentIdx`等信息
      * 
      * @param pCar 要加入的车辆指针
      * @return `Container::FULL_LOAD`: 道路满载，无法放入新的车辆；
@@ -225,7 +226,7 @@ class Container
      * 
      */
     inline void dispatchCarInContainer(){
-        for(int i=0; i<length; i++) dispatchCarInChannelFirst(i);
+        for(int i=0; i<channel; i++) dispatchCarInChannelFirst(i);
     }
 };
 
@@ -277,7 +278,7 @@ struct CROSS
     // 记录CROSS总数
     static int crossCount;
 
-    // `turnMap[(id1<<16)|id2]` 表示 从 道路id1 转向 道路id2 的转向优先级；右转:0，左转:1，直行:2
+    // `MERGE(id1, id2)` 表示 从 道路id1 转向 道路id2 的转向优先级；右转:0，左转:1，直行:2
     static map_type<int, uint8_t> turnMap;
 
     // 进入该路口的Container指针，按id升序排列
@@ -354,6 +355,14 @@ struct CROSS
     * 第二个是全局时间
     */
     void driveCarInitList(bool is_prior, int global_time);
+
+    /**
+     * @brief 路口调度
+     * 
+     * @param priority  true:只上路优先车辆  false:非优先车辆也可上路，但优先车辆先上路
+     * @param global_time  时间
+     */
+    void dispatch(int global_time);
 
     /**
      * @brief 为车辆计算下一条路线
