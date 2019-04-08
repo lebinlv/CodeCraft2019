@@ -164,7 +164,7 @@ class Container
     void searchRoad(CAR *car);
 
     // 获取第 pos 车道的 车辆vector 的引用, `pos~[0, channel]`
-    inline container_t &getCarVec(int pos){return carInChannel[pos];}
+    inline container_t &getCarVec(int pos){ return carInChannel[pos]; }
     inline container_t &operator[](int pos) { return carInChannel[pos]; }
 
     /**
@@ -182,7 +182,7 @@ class Container
      * 
      * @return 如果所有车辆都不会出路口，返回 nullptr
      */
-    inline CAR *top() { return priCar.empty() ? nullptr:priCar.top(); }
+    inline CAR *top() { return priCar.empty() ? nullptr : priCar.top(); }
 
     /**
      * @brief 取出第一辆车
@@ -332,11 +332,7 @@ struct CROSS
      * @return routeInfo_t&    `std::pair<Container*, float>` （<指向下一跳的指针, 预计总开销>）
      */
     inline routeInfo_t & lookUp(int car_speed, int current_road_id, int destination){
-      #if __DEBUG_MODE__
-        return routeTable[car_speed*1e8 + current_road_id*1e4 + destination];
-      #else
-        return routeTable[((car_speed<<26) | (current_road_id<<12)) | destination];
-      #endif
+        return routeTable[ROUTEID(car_speed, current_road_id, destination)];
     }
 
     /**
@@ -383,7 +379,7 @@ struct GRAPH
     GRAPH() { containerVec.reserve(CONTAINER_VECTOR_RESERVE_SIZE); };
     GRAPH(const GRAPH &) = delete;
     GRAPH(GRAPH &&) = delete;
-    ~GRAPH(){for(auto &val : costMap) delete [] val.second;};
+    ~GRAPH(){ for(auto &val : costMap) delete [] val.second; };
 
     /**
      * @brief 计算不同速度通过各边的开销（粗略开销，length/min(car.speed, road.maxSpeed）)

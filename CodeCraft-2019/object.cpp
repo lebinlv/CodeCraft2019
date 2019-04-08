@@ -1,13 +1,13 @@
 #include <cfloat>
 
 #include "lib/object.hpp"
-
+#include <fstream>
 
 /*
 *调参区间
 */
 static float init_prob = 0.9;  //得到的最优路径的初始概率
-static float max_factor = 0.9; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static float max_factor = 0.4; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static float alpha = 0.7;
 /*
 */
@@ -19,6 +19,15 @@ extern map_type<int, ROAD*> roadMap;
 extern map_type<int, CROSS *> crossMap;
 extern bool speedDetectArray[SPEED_DETECT_ARRAY_LENGTH];
 
+/* DEBUG
+extern ofstream fout;
+void modify(CAR *temp_car) 
+{
+    // fout << "id: " << temp_car->id << " speed: " << temp_car->speed << " currentIdx: " << temp_car->currentIdx << " route: ";
+    // for (auto road : temp_car->route)
+    //     fout << road->roadId << ", ";
+    // fout << endl;
+}*/
 
 /*************************** class Container *****************************/
 int Container::containerCount = 0;
@@ -114,7 +123,7 @@ void Container::dispatchCarInChannel(int channel_idx)
             pre_car_idx = 0;
             temp_car->state = CAR::END; // 并将该车标记为END
             pre_car_state = CAR::END;
-            waitStateCarCount--;
+            waitStateCarCount--;//modify(temp_car);
         }
     }
     else // 否则（即new_idx>=0） 该车无法出路口
@@ -123,7 +132,7 @@ void Container::dispatchCarInChannel(int channel_idx)
         pre_car_idx = new_idx;
         temp_car->state = CAR::END;     // 并标记为END
         pre_car_state = CAR::END;
-        waitStateCarCount--;
+        waitStateCarCount--;//modify(temp_car);
     }
 
     if(pre_car_state == CAR::WAIT) return;
@@ -139,12 +148,12 @@ void Container::dispatchCarInChannel(int channel_idx)
             temp_car->currentIdx = new_idx; // 则移动该车
             pre_car_idx = new_idx;
             temp_car->state = CAR::END; // 并标记为 END
-            waitStateCarCount--;
+            waitStateCarCount--;//modify(temp_car);
         } else { // 如果受到阻挡
             pre_car_idx += 1;
             temp_car->currentIdx = pre_car_idx; //移动该车
             temp_car->state = CAR::END;
-            waitStateCarCount--;
+            waitStateCarCount--;//modify(temp_car);
         }
     } // End of 遍历剩余车辆
 }
@@ -164,12 +173,12 @@ void Container::updateWhenNextRoadFull(int channel_idx)
             temp_car->currentIdx = new_idx; // 则移动该车
             pre_car_idx = new_idx;
             temp_car->state = CAR::END; // 并标记为 END
-            waitStateCarCount--;
+            waitStateCarCount--;//modify(temp_car);
         } else { // 如果受到阻挡
             pre_car_idx += 1;
             temp_car->currentIdx = pre_car_idx; //移动该车
             temp_car->state = CAR::END;
-            waitStateCarCount--;
+            waitStateCarCount--;//modify(temp_car);
         }
     } // End of 遍历剩余车辆
 }
@@ -515,7 +524,6 @@ CROSS::CROSS(int crossId, int roadId[]):id(crossId)
     }
 
     sort(enterRoadVec.begin(), enterRoadVec.end(), [](Container *a, Container *b)->bool{return a->roadId < b->roadId;});
-    //garage.reserve(GARAGE_RESERVE_SIZE);
     crossCount++;
 }
 
@@ -789,7 +797,6 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     continue;
                 }
 
-                // TODO: 
                 sort(awayRoadVec.begin(), awayRoadVec.end(), [cost_array, speed, destination](Container *a, Container *b) -> bool {
                     return (cost_array[a->infoIdx] + a->endCross->lookUp(speed, a->roadId, destination).second)
                         < (cost_array[b->infoIdx] + b->endCross->lookUp(speed, b->roadId, destination).second);
@@ -853,8 +860,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
     }
 }
 
-// TODO: 如果因被等待车辆阻挡？？？？何时退出此函数？此函数又该返回什么信息用于判断死锁？？？
-// TODO: 所有路口的优先车辆上路
+
 void CROSS::dispatch(int global_time)
 {
     // 道路按ID升序遍历
@@ -863,8 +869,6 @@ void CROSS::dispatch(int global_time)
         CAR *pCar = current_road->top();
         while(pCar)
         {
-if(pCar->state==CAR::END)
-int i=0;
             Container *car_next_road = pCar->route.back(); // 该车要去的下一条道路
             Container *temp_road;
             CAR *temp_car;
@@ -912,11 +916,11 @@ int i=0;
             {
                 // 成功进入下一个道路
                 case Container::SUCCESS:{
-                    current_road->pop();
-                    current_road->dispatchCarInChannel(pCar->preChannel);
-                    current_road->startCross->driveCarInitList(true, global_time);
-                    pCar = current_road->top();
-                    waitStateCarCount--;
+                    waitStateCarCount--; //成功进入，该车在 push_back() 函数内置为 END，所以计数减一
+                    current_road->pop(); //已经过路口，从优先队列弹出
+                    current_road->dispatchCarInChannel(pCar->preChannel); //调度该车之前所在车道
+                    current_road->startCross->driveCarInitList(true, global_time); //执行一次优先车辆上路
+                    pCar = current_road->top(); 
                 } break;
 
                 // 下一个道路满载
@@ -924,7 +928,6 @@ int i=0;
                     current_road->updateWhenNextRoadFull(pCar->currentChannel);
                     current_road->startCross->driveCarInitList(true, global_time);
                     pCar = current_road->top();
-                    waitStateCarCount--;
                 } break;
 
                 // 因被等待车辆阻挡而无法进入下一道路

@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
      */
     vector<CROSS *> crossVec;
     vector<ROAD *> roadVec;
-    vector<CAR* > carVec;
-    carVec.reserve(65000);
+//vector<CAR* > carVec;
+//carVec.reserve(65000);
 
     map_type<int, CAR*> presetCarMap;
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 
                 auto pCar = new CAR(car_id, from, to, speed, planTime, isPrior, isPreset);
                 crossMap[from]->garage.push_back(pCar);
-carVec.push_back(pCar);
+//carVec.push_back(pCar);
                 speedDetectArray[speed] = true; //标记车速
                 if(isPreset) presetCarMap.insert(pair<int, CAR*>(car_id, pCar));
             //}
@@ -195,9 +195,7 @@ carVec.push_back(pCar);
 
         // 车辆上路的优先级比较函数，优先车辆优先级最高，其次考虑车辆id。优先级高的放在前面，id小的放在前面
         sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
-            if( a->planTime == b->planTime)
-                return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
-            else return a->planTime < b->planTime;
+            return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
         });
     }
 /* End of 计算路由表，并对车库内车辆排序 */
@@ -213,10 +211,16 @@ carVec.push_back(pCar);
         exit(0);
     }
 /*End of 打开输出文件*/
-sort(carVec.begin(),carVec.end(),[](CAR*a, CAR*b)->bool{return a->id < b->id;});
-int waitStateCarCountBK;
+
+
+//sort(carVec.begin(),carVec.end(),[](CAR*a, CAR*b)->bool{return a->id < b->id;});    // DEBUG
+
+
 int count;
+
+
 /* 系统运行 */
+    int waitStateCarCountBK;
     for(;;)
     {
         global_time++;
@@ -234,16 +238,6 @@ int count;
         while(waitStateCarCount)
         {
             count = 1;
-            cout << "< " << waitStateCarCount << " >" << endl;
-            for (auto val : carVec) {
-                if (val->state == CAR::WAIT) {
-                    cout << '[' << count++ << "] ";
-                    cout << "id: " << val->id << " speed: " << val->speed << " currentIdx: " << val->currentIdx << " route: ";
-                    for (auto road : val->route) cout << road->roadId << ", ";
-                    cout << endl;
-                }
-            }
-
 
             for(auto cross : crossVec) 
             {
@@ -254,17 +248,15 @@ int count;
             if(waitStateCarCount == waitStateCarCountBK) 
             {
                 cout << "dead lock" << endl;
-                for (auto val : carVec)
-                {
-                    if (val->state == CAR::WAIT)
-                    {
-                        cout << "id: " << val->id << " speed: " << val->speed << " nextRoad: " << val->nextRoadId << " currentIdx: " << val->currentIdx << ";route: ";
-                        for (auto road : val->route)
-                            cout << road->roadId << ", ";
-                        cout << endl;
-                    }
-                }
-                //    break;
+                // for (auto val : carVec){
+                //     if (val->state == CAR::WAIT) {
+                //         cout << '[' << count++ << "] ";
+                //         cout << "id: " << val->id << " speed: " << val->speed << " currentIdx: " << val->currentIdx << " route: ";
+                //         for (auto road : val->route) cout << road->roadId << ", ";
+                //         cout << endl;
+                //     }
+                // }
+                break;
             };
 
             // 优先、非优先均上路
