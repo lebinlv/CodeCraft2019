@@ -1,6 +1,7 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include <queue>
@@ -62,16 +63,7 @@ struct CAR
      * @param newIdx    车辆在下一条道路上的初始位置
      * @param newChannel 车辆在下一条道路上的车道；
      */
-    inline void enterNewRoad(Container *newRoad , int newIdx, int newChannel) {
-        currentSpeed = nextSpeed;
-        currentIdx = newIdx;
-        preChannel = currentChannel;
-        currentChannel = newChannel;
-        state = END;
-        getNewRoad = false;
-
-        if(isPreset) route.pop_back();
-    }
+    inline void enterNewRoad(Container *newRoad , int newIdx, int newChannel);
 
     // 车辆出路口时的优先比较函数，服务于 priority_queue
     struct CompareWhenTurn {

@@ -1,14 +1,13 @@
 #include <cfloat>
 
 #include "lib/object.hpp"
-#include <fstream>
 
 /*
 *调参区间
 */
 static double init_prob = 0.9;  //得到的最优路径的初始概率
 static double max_factor = 0.9; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
-static double max_factor_drive_car = 0.05; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static double max_factor_drive_car = 0.5; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static double alpha = 0.7;
 
 /*
@@ -66,6 +65,20 @@ void modify(CAR *temp_car)
     //     fout << road->roadId << ", ";
     // fout << endl;
 }*/
+
+inline void CAR::enterNewRoad(Container *newRoad, int newIdx, int newChannel)
+{
+    currentSpeed = nextSpeed;
+    currentIdx = newIdx;
+    preChannel = currentChannel;
+    currentChannel = newChannel;
+    state = END;
+    getNewRoad = false;
+    for (auto val : route) { std::cout << val->roadId << ", "; }
+    std::cout << std::endl;
+
+    if (isPreset) route.pop_back();
+}
 
 /*************************** class Container *****************************/
 int Container::containerCount = 0;
@@ -353,6 +366,7 @@ void Container::searchRoad(CAR* car)
     {
         car->turnWeight = 2; // 当做直行处理
         car->nextSpeed = car->currentSpeed;
+        car->preChannel = car->currentChannel;
         car->getNewRoad = true;
         return;
     }
@@ -791,8 +805,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
 
                     if(temp_road->push_back(temp_car)==Container::SUCCESS) 
                     { 
-                        i = garage.erase(i); //continue; 
-                        break;
+                        i = garage.erase(i); continue; 
+                        //break;
                     }
 
                     ++i;
@@ -854,8 +868,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                         temp_car->startTime=global_time;
                         temp_car->route.push_back(temp_road);
                         i = garage.erase(i);
-                        //continue;
-                        break;
+                        continue;
+                        //break;
                     }
                 }
             }
@@ -879,8 +893,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     temp_car->nextSpeed = min(speed, temp_road->maxSpeed);
                     if(temp_road->push_back(temp_car)==Container::SUCCESS) 
                     { 
-                        i = garage.erase(i); //continue; 
-                        break;
+                        i = garage.erase(i); continue;
                     }
                     ++i;
                     continue;
@@ -939,9 +952,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     {
                         temp_car->startTime=global_time;
                         temp_car->route.push_back(temp_road);
-                        i = garage.erase(i);
-                        //continue;
-                        break;
+                        i = garage.erase(i); continue;
                     }
                 }
             }
