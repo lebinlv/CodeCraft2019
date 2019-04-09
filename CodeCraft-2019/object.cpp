@@ -787,9 +787,14 @@ Container* CROSS::searchRoadForCar(int current_road_id)
 
 void CROSS::driveCarInitList(bool is_prior,int global_time)
 {
+    if(this->pre_time!=global_time)
+    {
+        this->i=garage.begin();
+        this->pre_time=global_time;
+    }
     if (is_prior) //如果is_prior是true，则只上路优先车辆
     {
-        for (deque<CAR*>::iterator i =garage.begin();i!=garage.end();)
+        for (i;i!=garage.end();)
         {
             CAR *temp_car = *i;
             int speed = temp_car->speed;
@@ -878,7 +883,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
     }
     else
     {
-        for (deque<CAR*>::iterator i=garage.begin(); i!=garage.end();)
+        for (i; i!=garage.end();)
         {
             CAR *temp_car = *i;
             int speed = temp_car->speed;

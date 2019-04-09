@@ -275,7 +275,10 @@ struct CROSS
 {
     typedef std::pair<Container*, float> routeInfo_t;
     int id;
-
+    
+    deque<CAR*>::iterator i;//用于记忆的发车标志
+    int pre_time=-1;//用于发车的时间记忆
+    
     // 记录CROSS总数
     static int crossCount;
 
