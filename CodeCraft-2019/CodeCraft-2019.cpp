@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
      */
     vector<CROSS *> crossVec;
     vector<ROAD *> roadVec;
-//vector<CAR* > carVec;
-//carVec.reserve(65000);
+vector<CAR* > carVec;
+carVec.reserve(65000);
 
     map_type<int, CAR*> presetCarMap;
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 
                 auto pCar = new CAR(car_id, from, to, speed, planTime, isPrior, isPreset);
                 crossMap[from]->garage.push_back(pCar);
-//carVec.push_back(pCar);
+carVec.push_back(pCar);
                 speedDetectArray[speed] = true; //标记车速
                 if(isPreset) presetCarMap.insert(pair<int, CAR*>(car_id, pCar));
             //}
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 /*End of 打开输出文件*/
 
 
-//sort(carVec.begin(),carVec.end(),[](CAR*a, CAR*b)->bool{return a->id < b->id;});    // DEBUG
+sort(carVec.begin(),carVec.end(),[](CAR*a, CAR*b)->bool{return a->id < b->id;});    // DEBUG
 
 
 int count;
@@ -248,14 +248,14 @@ int count;
             if(waitStateCarCount == waitStateCarCountBK) 
             {
                 cout << "dead lock" << endl;
-                // for (auto val : carVec){
-                //     if (val->state == CAR::WAIT) {
-                //         cout << '[' << count++ << "] ";
-                //         cout << "id: " << val->id << " speed: " << val->speed << " currentIdx: " << val->currentIdx << " route: ";
-                //         for (auto road : val->route) cout << road->roadId << ", ";
-                //         cout << endl;
-                //     }
-                // }
+                for (auto val : carVec){
+                    if (val->state == CAR::WAIT) {
+                        cout << '[' << count++ << "] ";
+                        cout << "id: " << val->id << " speed: " << val->speed << " currentIdx: " << val->currentIdx << " route: ";
+                        for (auto road : val->route) cout << road->roadId << ", ";
+                        cout << endl;
+                    }
+                }
                 break;
             };
 

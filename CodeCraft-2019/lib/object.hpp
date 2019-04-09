@@ -25,19 +25,20 @@ struct CAR
     int id, from, to, speed, planTime;
     bool isPrior, isPreset;
 
+    // 车的实际出发时间
+    int startTime;
+
     // 该车当前所在车道， 该车在上一道路中的车道;
     // 车在当前道路上的位置, `idx ~ [0, length-1]`, 越小表示离出口越近;
     // 车在当前道路上的速度;
     int currentChannel, preChannel, currentIdx, currentSpeed;
 
-    int nextSpeed, nextRoadId;
-    bool getNewRoad;
-
     // 车的运行状态
     CAR_STATE state;
 
-    // 车的实际出发时间
-    int startTime;
+    int nextSpeed, nextRoadId;
+    bool getNewRoad;
+    Container *currentRoad;
 
     // 记录该车辆的行驶路线
     std::vector<Container *> route;
@@ -45,10 +46,7 @@ struct CAR
 
     CAR(int _id, int _from, int _to, int _speed, int _time, bool _isPrior, bool _isPreset):
         id(_id), from(_from), to(_to), speed(_speed), planTime(_time),
-        isPrior(_isPrior), isPreset(_isPreset){
-            currentChannel = preChannel = currentIdx = currentSpeed = nextSpeed = startTime = 0;
-            state = END;
-            getNewRoad = false;
+        isPrior(_isPrior), isPreset(_isPreset), currentIdx(0){
             route.reserve(GARAGE_RESERVE_SIZE);
     }
     ~CAR() {}
@@ -64,7 +62,8 @@ struct CAR
      * @param newIdx    车辆在下一条道路上的初始位置
      * @param newChannel 车辆在下一条道路上的车道；
      */
-    inline void enterNewRoad(int newIdx, int newChannel) {
+    inline void enterNewRoad(Container *newRoad , int newIdx, int newChannel) {
+        currentRoad = newRoad;
         currentSpeed = nextSpeed;
         currentIdx = newIdx;
         state = END;
@@ -175,7 +174,17 @@ class Container
      *         `Container::SUCCESS`: 成功加入；
      *         `others(>=0)`: 因等待车辆而无法进入，返回道路入口与等待车辆的距离
      */
-    int push_back(CAR* pCar);
+    int push_back(CAR *pCar);
+
+    /**
+     * @brief 测试能否加入新的车辆，与 push_back() 不同的是，push_back() 在成功加入时会改变pCar的状态并将pCar放入到该道路上，
+     *        该函数仅仅测试能否加入，能加入返回true，否则返回false
+     * 
+     * @param pCar 测试车辆指针
+     * @return true 
+     * @return false 
+     */
+    bool push_back_test(CAR *pCar);
 
     /**
      * @brief 获取最先行驶的车辆的指针
