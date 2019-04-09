@@ -56,26 +56,19 @@ double calculate_crowed_factor(double r)
         return 0.95 * r / (1 - pos) + (0.05 - pos) / (1 - pos);
     }
 }
-/* DEBUG
-extern ofstream fout;
-void modify(CAR *temp_car) 
-{
-    // fout << "id: " << temp_car->id << " speed: " << temp_car->speed << " currentIdx: " << temp_car->currentIdx << " route: ";
-    // for (auto road : temp_car->route)
-    //     fout << road->roadId << ", ";
-    // fout << endl;
-}*/
 
-inline void CAR::enterNewRoad(Container *newRoad, int newIdx, int newChannel)
+inline void CAR::enterNewRoad(int newIdx, int newChannel)
 {
-    currentSpeed = nextSpeed;
-    currentIdx = newIdx;
     preChannel = currentChannel;
     currentChannel = newChannel;
-    state = END;
+
+    currentIdx = newIdx;
+    currentSpeed = nextSpeed;
+
     getNewRoad = false;
-    for (auto val : route) { std::cout << val->roadId << ", "; }
-    std::cout << std::endl;
+    state = END;
+    // for (auto val : route) { std::cout << val->roadId << ", "; }
+    // std::cout << std::endl;
 
     if (isPreset) route.pop_back();
 }
@@ -107,7 +100,7 @@ int Container::push_back(CAR *pCar)
     for (int i = 0; i < channel; i++) {
         // 如果当前车道为空
         if(carInChannel[i].empty()) {
-            pCar->enterNewRoad(this, new_idx, i);
+            pCar->enterNewRoad(new_idx, i);
             carInChannel[i].push_back(pCar);
             return SUCCESS;
         }
@@ -117,13 +110,13 @@ int Container::push_back(CAR *pCar)
 
         if (pre_car->state == CAR::END) { // 如果该车道最后一辆车状态为 END
             if (pre_car_idx < length-1) { // 如果该车道还有空间
-                pCar->enterNewRoad(this, (new_idx>pre_car_idx ? new_idx:pre_car_idx+1), i);
+                pCar->enterNewRoad((new_idx>pre_car_idx ? new_idx:pre_car_idx+1), i);
                 carInChannel[i].push_back(pCar);
                 return SUCCESS;
             }
         } else { // 如果最后一辆车是 WAIT
             if (new_idx > pre_car_idx) { // 如果不被阻挡，则成功进入并标记为END
-                pCar->enterNewRoad(this, new_idx, i);
+                pCar->enterNewRoad(new_idx, i);
                 carInChannel[i].push_back(pCar);
                 return SUCCESS;
             } // End of 如果不被阻挡
@@ -133,57 +126,14 @@ int Container::push_back(CAR *pCar)
     return FULL_LOAD;
 }
 
-bool Container::push_back_test(CAR *pCar)
+void Container::pop()
 {
-    int s2 = max(0, pCar->nextSpeed - pCar->currentIdx); // 计算出 pCar 在此道路上的可行距离 s2
-    int new_idx = length - s2;
-
-    CAR *pre_car;
-    int pre_car_idx;
-
-    // 逐车道遍历
-    for (int i = 0; i < channel; i++)
-    {
-        // 如果当前车道为空
-        if (carInChannel[i].empty())
-        {
-            return true;
-        }
-
-        pre_car = carInChannel[i].back();
-        pre_car_idx = pre_car->currentIdx;
-
-        if (pre_car->state == CAR::END) // 如果该车道最后一辆车状态为 END
-        { 
-            if (pre_car_idx < length - 1) // 如果该车道还有空间
-            { 
-                return true;
-            }
-        }
-        else // 如果最后一辆车是 WAIT
-        {
-            if (new_idx > pre_car_idx) // 如果不被阻挡，则成功进入并标记为END
-            { 
-                return true;
-            }
-            return false; // 被阻挡则返回该车道剩余空间大小
-        }
-    }
-    return false ;
-}
-
-bool Container::pop()
-{
-    if (priCar.empty()) return false;
-
     // 获取车辆所在车道id
     auto &channelVec = carInChannel[priCar.top()->preChannel];
 
     // 删除该车
-    channelVec.erase(channelVec.begin());
+    channelVec.erase(channelVec.begin()); //TODO: 性能待优化
     priCar.pop();
-
-    return true;
 }
 
 void Container::dispatchCarInChannel(int channel_idx)

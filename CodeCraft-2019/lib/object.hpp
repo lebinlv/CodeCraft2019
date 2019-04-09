@@ -33,13 +33,13 @@ struct CAR
     // 该车当前所在车道， 该车在上一道路中的车道;
     // 车在当前道路上的位置, `idx ~ [0, length-1]`, 越小表示离出口越近;
     // 车在当前道路上的速度;
-    int currentChannel, preChannel, currentIdx, currentSpeed;
-
-    // 车的运行状态
-    CAR_STATE state;
+    int preChannel, currentChannel, currentIdx, currentSpeed;
 
     int nextSpeed, turnWeight;
     bool getNewRoad;
+
+    // 车的运行状态
+    CAR_STATE state;
 
     // 记录该车辆的行驶路线
     std::vector<Container *> route;
@@ -63,7 +63,7 @@ struct CAR
      * @param newIdx    车辆在下一条道路上的初始位置
      * @param newChannel 车辆在下一条道路上的车道；
      */
-    inline void enterNewRoad(Container *newRoad , int newIdx, int newChannel);
+    inline void enterNewRoad(int newIdx, int newChannel);
 
     // 车辆出路口时的优先比较函数，服务于 priority_queue
     struct CompareWhenTurn {
@@ -169,16 +169,6 @@ class Container
     int push_back(CAR *pCar);
 
     /**
-     * @brief 测试能否加入新的车辆，与 push_back() 不同的是，push_back() 在成功加入时会改变pCar的状态并将pCar放入到该道路上，
-     *        该函数仅仅测试能否加入，能加入返回true，否则返回false
-     * 
-     * @param pCar 测试车辆指针
-     * @return true 
-     * @return false 
-     */
-    bool push_back_test(CAR *pCar);
-
-    /**
      * @brief 获取最先行驶的车辆的指针
      * 
      * @return 如果所有车辆都不会出路口，返回 nullptr
@@ -191,15 +181,7 @@ class Container
      * @return true  成功取出
      * @return false 取出失败
      */
-    bool pop();
-
-    /**
-     * @brief 判断是否有车要出路口
-     * 
-     * @return true  没有车要出路口
-     * @return false 有车要出路口
-     */
-    inline bool empty(){ return priCar.empty();}
+    void pop();
 
     /**
      * @brief 调度指定channel内的车辆; 仅有车辆成功出路口时调用；
@@ -346,7 +328,7 @@ struct CROSS
      * @param _to   车辆要转去的道路的id
      * @return int  右转：0， 左转：1， 直行：0
      */
-    inline static int getTurnDirection(int _from, int _to) { return turnMap[MERGE(_from, _to)];}
+    static inline int getTurnDirection(int _from, int _to) { return turnMap[MERGE(_from, _to)];}
 
     /*
     * @brief 该函数分为两个内容，调度优先车辆与非优先车辆，具体使用见官方伪代码
@@ -381,9 +363,10 @@ struct GRAPH
     static std::vector<uint8_t> speedDetectResultVec;
 
     GRAPH() { containerVec.reserve(CONTAINER_VECTOR_RESERVE_SIZE); };
+    ~GRAPH(){ for(auto &val : costMap) delete [] val.second; };
+
     GRAPH(const GRAPH &) = delete;
     GRAPH(GRAPH &&) = delete;
-    ~GRAPH(){ for(auto &val : costMap) delete [] val.second; };
 
     /**
      * @brief 计算不同速度通过各边的开销（粗略开销，length/min(car.speed, road.maxSpeed）)
