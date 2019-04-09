@@ -2,7 +2,6 @@
 #include <string>
 #include <chrono>   // speed test
 #include <sstream>
-#include <fstream>
 
 #include <cstdio>
 
@@ -11,6 +10,7 @@
 using namespace std;
 
 int waitStateCarCount = 0;
+int totalCarCount = 0;
 /**
  * @key  `road_id`;
  * @value  value: `ROAD*`;
@@ -23,6 +23,7 @@ map_type<int, ROAD *> roadMap;
  */
 map_type<int, CROSS *> crossMap;
 
+ofstream fout;
 
 /**
  * @brief 长度为 `SPEED_DETECT_ARRAY_LENGTH`(比最大车速大1) 数组，用于标记有多少种车速
@@ -202,7 +203,6 @@ carVec.push_back(pCar);
 
 
 /* 打开输出文件*/
-    ofstream fout;
     char out_file_buffer[OUT_FILE_RESERVE_SPACE*1024];
     fout.rdbuf()->pubsetbuf(out_file_buffer, OUT_FILE_RESERVE_SPACE*1024);
     fout.open(answerPath);
@@ -224,6 +224,8 @@ int count;
     for(;;)
     {
         global_time++;
+if(global_time==44)
+int i=0;
         cout << "time: "<<global_time << endl;
 
         // 调度所有道路内的车辆 driveCarJustCurrentRoad()

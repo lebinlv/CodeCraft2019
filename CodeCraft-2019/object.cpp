@@ -8,7 +8,7 @@
 */
 static double init_prob = 0.9;  //得到的最优路径的初始概率
 static double max_factor = 0.9; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
-static double max_factor_drive_car = 0.1; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static double max_factor_drive_car = 0.05; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static double alpha = 0.7;
 
 /*
@@ -41,7 +41,9 @@ static float affect_factor = 0.05; //转折点纵坐标
 
 using namespace std;
 
+extern ofstream fout;
 extern int waitStateCarCount;
+extern int totalCarCount;
 extern map_type<int, ROAD*> roadMap;
 extern map_type<int, CROSS *> crossMap;
 extern bool speedDetectArray[SPEED_DETECT_ARRAY_LENGTH];
@@ -347,13 +349,12 @@ void Container::dispatchCarInChannelFirst(int channel_idx)
 void Container::searchRoad(CAR* car)
 {
     //如果下一个路口是目的地
-    if(car->currentRoad->nextCrossId == car->to)
+    if(this->nextCrossId == car->to)
     {
-        Container *next_road = car->currentRoad->turnTo[2]; // 当做直行处理
-        car->nextSpeed = min(car->speed, next_road->maxSpeed);
-        car->nextRoadId = next_road->roadId;
+        car->turnWeight = 2; // 当做直行处理
+        car->nextSpeed = car->currentSpeed;
         car->getNewRoad = true;
-        (car->route).push_back(next_road);
+        return;
     }
 
     // 预置车辆
@@ -361,7 +362,7 @@ void Container::searchRoad(CAR* car)
     {
         Container *next_road = car->route.back();
         car->nextSpeed = min(car->speed, next_road->maxSpeed);
-        car->nextRoadId = next_road->roadId;
+        car->turnWeight = CROSS::getTurnDirection(this->roadId, next_road->roadId);
         car->getNewRoad = true;
         return;
     }
@@ -377,7 +378,7 @@ void Container::searchRoad(CAR* car)
     if (car->isPrior) //prior car just use its shortest route
     {
         car->nextSpeed = min(car->speed, best_road->maxSpeed);
-        car->nextRoadId = best_road->roadId;
+        car->turnWeight = CROSS::getTurnDirection(this->roadId, best_road->roadId);
         car->getNewRoad = true;
         (car->route).push_back(best_road);
     }
@@ -539,13 +540,13 @@ void Container::searchRoad(CAR* car)
 
         if(road){
             car->nextSpeed = min(car->speed, road->maxSpeed);
-            car->nextRoadId = road->roadId;
+            car->turnWeight = CROSS::getTurnDirection(this->roadId, road->roadId);
             car->getNewRoad = true;
             (car->route).push_back(road);
         }
         else{
             car->nextSpeed = min(car->speed, best_road->maxSpeed);
-            car->nextRoadId = best_road->roadId;
+            car->turnWeight = CROSS::getTurnDirection(this->roadId, best_road->roadId);
             car->getNewRoad = true;
             (car->route).push_back(best_road);
         }
@@ -790,7 +791,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
 
                     if(temp_road->push_back(temp_car)==Container::SUCCESS) 
                     { 
-                        i = garage.erase(i); continue; 
+                        i = garage.erase(i); //continue; 
+                        break;
                     }
 
                     ++i;
@@ -852,7 +854,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                         temp_car->startTime=global_time;
                         temp_car->route.push_back(temp_road);
                         i = garage.erase(i);
-                        continue;
+                        //continue;
+                        break;
                     }
                 }
             }
@@ -876,7 +879,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     temp_car->nextSpeed = min(speed, temp_road->maxSpeed);
                     if(temp_road->push_back(temp_car)==Container::SUCCESS) 
                     { 
-                        i = garage.erase(i); continue; 
+                        i = garage.erase(i); //continue; 
+                        break;
                     }
                     ++i;
                     continue;
@@ -936,7 +940,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                         temp_car->startTime=global_time;
                         temp_car->route.push_back(temp_road);
                         i = garage.erase(i);
-                        continue;
+                        //continue;
+                        break;
                     }
                 }
             }
@@ -954,13 +959,34 @@ void CROSS::dispatch(int global_time)
         CAR *pCar = current_road->top();
         while(pCar)
         {
+            // 如果到达目的地
+            if (current_road->nextCrossId == pCar->to)
+            {
+                totalCarCount--;
+                if(!pCar->isPreset){
+                    fout << '(' << pCar->id << ", " << pCar->startTime;
+                    for(auto road : pCar->route) fout << ", " << road->roadId;
+                    #if __DEBUG_MODE__
+                        fout << ")" << endl;
+                    #else 
+                        fout << ")\n";
+                    #endif
+                }
+                waitStateCarCount--;
+                current_road->pop();
+                current_road->dispatchCarInChannel(pCar->currentChannel);      //调度该车之前所在车道
+                current_road->startCross->driveCarInitList(true, global_time); //执行一次优先车辆上路
+                pCar = current_road->top();
+                continue;
+            }
+
             Container *car_next_road = pCar->route.back(); // 该车要去的下一条道路
             Container *temp_road;
             CAR *temp_car;
 
             /* 判断是否冲突 */
             bool conflict = false;
-            switch(turnMap[MERGE(current_road->roadId, pCar->nextRoadId)])
+            switch(pCar->turnWeight)
             {
                 case 0: //右转
                 {
@@ -968,7 +994,7 @@ void CROSS::dispatch(int global_time)
                     temp_road = current_road->opposite[1];
                     if(temp_road){
                         temp_car = temp_road->top();
-                        if (temp_car && turnMap[MERGE(temp_road->roadId, temp_car->nextRoadId)] == 2) {
+                        if (temp_car && temp_car->turnWeight == 2) {
                             conflict = true;
                             break;
                         }
@@ -978,7 +1004,7 @@ void CROSS::dispatch(int global_time)
                     temp_road = current_road->opposite[2];
                     if(temp_road){
                         temp_car = temp_road->top();
-                        if (temp_car && turnMap[MERGE(temp_road->roadId, temp_car->nextRoadId)] == 1)
+                        if (temp_car && temp_car->turnWeight == 1)
                             conflict = true;
                     }
                 } break;
@@ -989,7 +1015,7 @@ void CROSS::dispatch(int global_time)
                     temp_road = current_road->opposite[0];
                     if(temp_road) {
                         temp_car = temp_road->top();
-                        if(temp_car && turnMap[MERGE(temp_road->roadId, temp_car->nextRoadId)]==2){
+                        if(temp_car && temp_car->turnWeight == 2){
                             conflict = true;
                         }
                     }

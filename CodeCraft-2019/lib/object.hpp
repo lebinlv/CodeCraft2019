@@ -1,6 +1,7 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
+#include <fstream>
 #include <vector>
 #include <queue>
 #include <deque>
@@ -36,9 +37,8 @@ struct CAR
     // 车的运行状态
     CAR_STATE state;
 
-    int nextSpeed, nextRoadId;
+    int nextSpeed, turnWeight;
     bool getNewRoad;
-    Container *currentRoad;
 
     // 记录该车辆的行驶路线
     std::vector<Container *> route;
@@ -46,7 +46,7 @@ struct CAR
 
     CAR(int _id, int _from, int _to, int _speed, int _time, bool _isPrior, bool _isPreset):
         id(_id), from(_from), to(_to), speed(_speed), planTime(_time),
-        isPrior(_isPrior), isPreset(_isPreset), currentIdx(0){
+        isPrior(_isPrior), isPreset(_isPreset), currentIdx(0), state(END){
             route.reserve(GARAGE_RESERVE_SIZE);
     }
     ~CAR() {}
@@ -63,13 +63,13 @@ struct CAR
      * @param newChannel 车辆在下一条道路上的车道；
      */
     inline void enterNewRoad(Container *newRoad , int newIdx, int newChannel) {
-        currentRoad = newRoad;
         currentSpeed = nextSpeed;
         currentIdx = newIdx;
-        state = END;
-        getNewRoad = false;
         preChannel = currentChannel;
         currentChannel = newChannel;
+        state = END;
+        getNewRoad = false;
+
         if(isPreset) route.pop_back();
     }
 
@@ -194,7 +194,7 @@ class Container
     inline CAR *top() { return priCar.empty() ? nullptr : priCar.top(); }
 
     /**
-     * @brief 取出第一辆车
+     * @brief 从出路口优先队列中取出第一辆车, 注意，该函数会同时将该车从 内部vector中erase
      * 
      * @return true  成功取出
      * @return false 取出失败
@@ -351,7 +351,7 @@ struct CROSS
      * @param _to   车辆要转去的道路的id
      * @return int  右转：0， 左转：1， 直行：0
      */
-    inline int getTurnDirection(int _from, int _to) { return turnMap[MERGE(_from, _to)];}
+    inline static int getTurnDirection(int _from, int _to) { return turnMap[MERGE(_from, _to)];}
 
     /*
     * @brief 该函数分为两个内容，调度优先车辆与非优先车辆，具体使用见官方伪代码
