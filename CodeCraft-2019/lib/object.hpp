@@ -276,7 +276,9 @@ struct CROSS
     // 离开该路口的Container指针, 无序排列
     std::vector<Container *>  awayRoadVec;
     // 车库，只用于发车...
-    std::deque<CAR *> garage;
+    std::deque<CAR *> garage; 
+    std::deque<CAR *> priorCarGarage;    // 优先车辆车库
+    std::deque<CAR *> ordinaryCarGarage; // 普通车辆车库
 
   private:
     // 路由表的索引@release： uint32_t    | speed 6bit(0~63) | removeRoadId 14bit(0~16383) | 目的crossId 12bit(0~4095) |
