@@ -8,35 +8,6 @@
 static double init_prob = 0.9;  //得到的最优路径的初始概率
 static double max_factor = 0.9; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static double max_factor_drive_car = 0.5; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
-static double alpha = 0.7;
-
-/*
-*二路口概率分布
-*/
-static double bi_p1 = 0.9;
-static double bi_p2 = 0.1;
-
-/*
-*三路口，因为设置了归一化，所以这边不需要总概率为 1
-*/
-static double tri_p1 = 0.9;
-static double tri_p2 = 0.2;
-static double tri_p3 = 0.1;
-
-static double tri_p0 = 0.2; //两条路相同
-
-/*
-*四路口
-*/
-static double four_p1 = 0.9;
-static double four_p2 = 0.3;
-static double four_p3 = 0.2;
-static double four_p4 = 0.1;
-/*
-*拥塞程度计算函数参量设计
-*/
-static float pos = 0.5;            //概率激增位置
-static float affect_factor = 0.05; //转折点纵坐标
 
 using namespace std;
 
@@ -47,15 +18,6 @@ extern map_type<int, ROAD*> roadMap;
 extern map_type<int, CROSS *> crossMap;
 extern bool speedDetectArray[SPEED_DETECT_ARRAY_LENGTH];
 
-//计算拥塞程度的函数,参数为现有车辆数量除以容量
-double calculate_crowed_factor(double r)
-{
-    if (r < pos)  return r * affect_factor;
-
-    else {
-        return 0.95 * r / (1 - pos) + (0.05 - pos) / (1 - pos);
-    }
-}
 
 inline void CAR::enterNewRoad(int newIdx, int newChannel)
 {
@@ -312,7 +274,7 @@ void Container::dispatchCarInChannelFirst(int channel_idx)
 void Container::searchRoad(CAR* car)
 {
     //如果下一个路口是目的地
-    if(this->nextCrossId == car->to)
+    if(nextCrossId == car->to)
     {
         car->turnWeight = 2; // 当做直行处理
         car->nextSpeed = car->currentSpeed;
@@ -333,188 +295,61 @@ void Container::searchRoad(CAR* car)
 
     int speed=car->speed;
     int destination = car->to;
-    int count=0;//计数器，统计可以转向的路口数量
-    float distance_left = FLT_MAX, distance_right = FLT_MAX, distance_straight = FLT_MAX;
 
     auto &route_info = endCross->lookUp(speed, roadId, destination);
     Container *best_road= route_info.first;//最优的路
 
-    if (car->isPrior) //prior car just use its shortest route
-    {
+    //最优的路径没有满载
+    if(best_road->size() <= max_factor*best_road->capacity) {
         car->nextSpeed = min(car->speed, best_road->maxSpeed);
         car->turnWeight = CROSS::getTurnDirection(this->roadId, best_road->roadId);
         car->getNewRoad = true;
         (car->route).push_back(best_road);
+        return;
     }
-    else // for ordinary car
+
+
+    float *cost_array = GRAPH::costMap[speed];
+
+    Container * second_best_road;//第二近的路的临时保存变量
+    float distance=FLT_MAX;//最小距离变量
+    float local_distance;//局部距离变量
+    bool is_second_best_exist=false;//标记是否第二近的路存在
+
+    for (auto i : endCross->awayRoadVec)
     {
-        float *cost_array = GRAPH::costMap[speed];
-        Container* right=turnTo[0];
-        if(right)//存在右边的路
-        {
-            distance_right = right->endCross->lookUp(speed, right->roadId, destination).second + cost_array[right->infoIdx];
-            count++;//计数有效的路数量
-            right->probability = ((right->size()) > (max_factor * right->capacity)) ? 0:1;
-        }
+        if(i==best_road || i==this) continue;
 
-        Container* left=turnTo[1];
-        if(left){
-            distance_left = left->endCross->lookUp(speed, left->roadId, destination).second + cost_array[left->infoIdx];
-            count++;
-            left->probability = (left->size() > (max_factor * left->capacity)) ? 0:1;
-        }
+        //得到本道路到目的地的开销
+        local_distance=i->endCross->lookUp(speed,i->roadId, destination).second;
+        if(local_distance > 0) {
+            local_distance += cost_array[i->infoIdx];
 
-        Container* straight=turnTo[2];
-        if(straight){
-            distance_straight = straight->endCross->lookUp(speed, straight->roadId, destination).second + cost_array[straight->infoIdx];
-            count++;
-            straight->probability = (straight->size() > (max_factor * straight->capacity)) ? 0:1;
-        }
-
-        switch(count)
-        {
-            //有三条有效路径
-            case 3: {
-                //最优路是左边的路
-                if(best_road==left)
-                {
-                    best_road->probability=min(tri_p1,best_road->probability);//最优路幅值概率
-                    if(distance_right<distance_straight)//根据另外两条路的长短来给这两条路幅值概率
-                    {
-                        right->probability=min(tri_p2,right->probability);
-                        straight->probability=min(tri_p3,straight->probability);
-                    }
-                    else if(distance_right == distance_straight)
-                    {
-                        right->probability=min(tri_p0,right->probability);
-                        straight->probability=min(tri_p0,straight->probability);
-                    }
-                    else
-                    {
-                        right->probability=min(tri_p3,right->probability);
-                        straight->probability=min(tri_p2,straight->probability);
-                    }
-                    
-                }
-                else if(best_road==right)//最有路是右边的路
-                {
-                    best_road->probability=min(tri_p1,best_road->probability);
-                    if(distance_left<distance_straight)
-                    {
-                        left->probability=min(tri_p2,left->probability);
-                        straight->probability=min(tri_p3,straight->probability);
-                    }
-                    else if(distance_left == distance_straight)
-                    {
-                        left->probability=min(tri_p0,left->probability);
-                        straight->probability=min(tri_p0,straight->probability);
-                    }
-                    else
-                    {
-                        left->probability=min(tri_p3,left->probability);
-                        straight->probability=min(tri_p2,straight->probability);
-                    }
-                }
-                else//最有路是直行的路
-                {
-                    best_road->probability=min(tri_p1,best_road->probability);
-                    if(distance_right<distance_left)
-                    {
-                        right->probability=min(tri_p2,right->probability);
-                        left->probability=min(tri_p3,left->probability);
-                    }
-                    else if(distance_right == distance_left)
-                    {
-                        right->probability=min(tri_p0,right->probability);
-                        left->probability=min(tri_p0,left->probability);
-                    }
-                    else
-                    {
-                        right->probability=min(tri_p3,right->probability);
-                        left->probability=min(tri_p2,left->probability);
-                    }
-                }
-            } break;
-
-            //有两条有效路径
-            case 2: {
-                if(!(left))//左边道路无效
-                {
-                    if(distance_right<distance_straight)//根据另外两条路的长短来给这两条路幅值概率
-                    {
-                        right->probability=min(bi_p1,right->probability);
-                        straight->probability=min(bi_p2,straight->probability);
-                    }
-                    else if(distance_right == distance_straight)
-                    {
-                        right->probability=min(0.5,right->probability);
-                        straight->probability=min(0.5,straight->probability);
-                    }
-                    else
-                    {
-                        right->probability=min(bi_p2,right->probability);
-                        straight->probability=min(bi_p1,straight->probability);
-                    }
-                }
-                else if(!(right))//右边道路无效
-                {
-                    if(distance_left<distance_straight)
-                    {
-                        left->probability=min(bi_p1,left->probability);
-                        straight->probability=min(bi_p2,straight->probability);
-                    }
-                    else if(distance_left == distance_straight)
-                    {
-                        left->probability=min(0.5,left->probability);
-                        straight->probability=min(0.5,straight->probability);
-                    }
-                    else
-                    {
-                        left->probability=min(bi_p2,left->probability);
-                        straight->probability=min(bi_p1,straight->probability);
-                    }
-                }
-                else//直行无效
-                {
-                    if(distance_right<distance_left)
-                    {
-                        right->probability=min(bi_p1,right->probability);
-                        left->probability=min(bi_p2,left->probability);
-                    }
-                    else if(distance_left==distance_straight)
-                    {
-                        right->probability=min(0.5,right->probability);
-                        left->probability=min(0.5,left->probability);
-                    }
-                    else
-                    {
-                        right->probability=min(bi_p2,right->probability);
-                        left->probability=min(bi_p1,left->probability);
-                    }
-                }
-            } break;
-
-            // 只有一条有效路径
-            case 1: {
-                best_road->probability=1;//只有一条路不是空，那么这条路肯定是路由表中的最优路
-            } break;
-        }
-
-        Container* road=endCross->searchRoadForCar(roadId);
-
-        if(road){
-            car->nextSpeed = min(car->speed, road->maxSpeed);
-            car->turnWeight = CROSS::getTurnDirection(this->roadId, road->roadId);
-            car->getNewRoad = true;
-            (car->route).push_back(road);
-        }
-        else{
-            car->nextSpeed = min(car->speed, best_road->maxSpeed);
-            car->turnWeight = CROSS::getTurnDirection(this->roadId, best_road->roadId);
-            car->getNewRoad = true;
-            (car->route).push_back(best_road);
+            if(local_distance<distance && i->size() <= max_factor*i->capacity)
+            {
+                distance=local_distance;
+                second_best_road=i;
+                is_second_best_exist=true;
+            }
         }
     }
+
+    if(is_second_best_exist)//第二优的路存在
+    {
+        car->nextSpeed = min(speed, second_best_road->maxSpeed);
+        car->turnWeight = CROSS::getTurnDirection(this->roadId, second_best_road->roadId);
+        car->getNewRoad = true;
+        (car->route).push_back(second_best_road);
+    }
+    else//第二优的路不存在，直接取得最优路放进去
+    {
+        car->nextSpeed = min(speed, best_road->maxSpeed);
+        car->turnWeight = CROSS::getTurnDirection(this->roadId, best_road->roadId);
+        car->getNewRoad = true;
+        (car->route).push_back(best_road);
+    }
+
+    return;
 }
 
 /*************************** end of class Container *****************************/
@@ -536,6 +371,7 @@ ROAD::ROAD(int _id, int _length, int _speed, int _channel, int _from, int _to, b
 /*************************** class CROSS *****************************/
 map_type<int, uint8_t> CROSS::turnMap;
 int CROSS::crossCount = 0;
+CROSS::routeInfo_t findNothing = CROSS::routeInfo_t(nullptr, -1);
 
 CROSS::CROSS(int crossId, int roadId[]):id(crossId)
 {
@@ -625,6 +461,9 @@ void CROSS::updateRouteTableInternall(int speed, int removeRoadId)
     for (auto node : awayRoadVec){
         if(node->roadId != removeRoadId) candidates.push(new Node(pWeight[node->infoIdx], node->nextCrossId, node));
     }
+
+    if(candidates.empty()) return; // 如果第一次辐射就未找到节点，说明舍掉 removeRoadId 后出度为0，直接返回
+
     record = candidates.top(); // 取队列顶节点
     candidates.pop();
     visited_map.insert(pair<int, Node *>(record->crossId, record)); // 将当前节点标记为已访问
@@ -683,56 +522,66 @@ void CROSS::updateRouteTableInternall(int speed, int removeRoadId)
     for (auto &val : visited_map){delete val.second;} // 释放 visited_map中的 Node*
 }
 
-Container* CROSS::searchRoadForCar(int current_road_id)
+Container *CROSS::searchRoad(CAR* pCar)
 {
-    double p[4]={0,0,0,0};//最终概率
-    double p_total=0;
-    int away_road_count = awayRoadVec.size();
+    int speed=pCar->speed;
+    int destination = pCar->to;
 
-    Container *temp_container;
-    for(int i=0; i<away_road_count; i++)
+    if (pCar->isPreset)
     {
-        temp_container = awayRoadVec[i];
-        if(temp_container->roadId == current_road_id) continue;
+        Container *next_road = pCar->route.back();
+        if(next_road->size() <= max_factor*next_road->capacity) {
+            pCar->nextSpeed = min(speed, next_road->maxSpeed);
+            return next_road;
+        }
+        return nullptr;
+    }
 
-        int car_total = temp_container->size();          //下一条路的车的数量
-        int road_capacity = temp_container->capacity;    //下一条路的容量
-        double congestion = alpha * (double)(car_total) / (double)(road_capacity);//拥塞指标计算，此处只是其中一项
-        int count = 0;          //记录有几条二阶边不为空
-        double target = 0;      //记录二阶边拥塞指标之和
-        for(int j=0; j<3; j++)
+    auto &route_info = lookUp(speed, 0, destination);
+    Container *best_road = route_info.first; //最优的路
+
+    float *cost_array = GRAPH::costMap[speed];
+
+    //最优的路径没有满载
+    if(best_road->size() <= max_factor*best_road->capacity){
+        pCar->nextSpeed = min(speed, best_road->maxSpeed);
+        (pCar->route).push_back(best_road);
+        return best_road;
+    }
+
+    Container * second_best_road;//第二近的路的临时保存变量
+    float distance=FLT_MAX;//最小距离变量
+    float local_distance;//局部距离变量
+    bool is_second_best_exist=false;//标记是否第二近的路存在
+
+    for(auto i : awayRoadVec)
+    {
+        //如果这条道路容量没有满，并且道路很近,并且不是最优路径
+        if(i != best_road)
         {
-            Container* second_road = temp_container->turnTo[j];
-            if(second_road)
-            {
-                target += (double)(second_road->size()) / (double)(second_road->capacity);
-                count++;
+            //得到本道路到目的地的开销
+            local_distance=i->endCross->lookUp(speed,i->roadId, destination).second;
+
+            if(local_distance > 0){
+                local_distance += cost_array[i->infoIdx];
+
+                if(local_distance<distance && i->size()<=max_factor*i->capacity)
+                {
+                    distance=local_distance;
+                    second_best_road=i;
+                    is_second_best_exist=true;
+                }
             }
         }
-        congestion += (1-alpha) * target / count;
-        p[i] = temp_container->probability * (1 - congestion);
-        p_total += p[i];
     }
-    //如果出去的路都不能走,就直接返回空
-    if(p_total == 0)    return nullptr;
-    //将概率归一化
-    for(int i=0; i<4; i++) p[i] /= p_total;
-
-    double p_random = double(rand() % 10000) / 10000;
-    double p_heap = 0;
-
-    for(int i=0; i<away_road_count; i++)
+    if(is_second_best_exist)//第二优的路存在
     {
-        if(p[i]>0){
-            if(p_random>=p_heap && p_random<=p_heap+p[i]) return awayRoadVec[i];
-            p_heap += p[i];
-        }
+        pCar->nextSpeed = min(speed, second_best_road->maxSpeed);
+        (pCar->route).push_back(second_best_road);
+        return second_best_road;
     }
 
-    for(int i=away_road_count-1; i>=0; i--)
-    {
-        if(p[i]) return awayRoadVec[i];
-    }
+    return nullptr;
 }
 
 void CROSS::driveCarInitList(bool is_prior,int global_time)
@@ -742,6 +591,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
         this->i=garage.begin();
         this->pre_time=global_time;
     }
+
     if (is_prior) //如果is_prior是true，则只上路优先车辆
     {
         for (i;i!=garage.end();)
@@ -776,44 +626,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                           < (cost_array[b->infoIdx] + b->endCross->lookUp(speed, 0, destination).second);
                 });
 
-                switch(awayRoadVec.size())
-                {
-                    case 4:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(four_p1,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(four_p2,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                        awayRoadVec[2]->probability=\
-                            min(four_p3,((awayRoadVec[2]->size())<( max_factor_drive_car*awayRoadVec[2]->capacity)?1.0:0.0));
-                        awayRoadVec[3]->probability=\
-                            min(four_p4,((awayRoadVec[3]->size())<( max_factor_drive_car*awayRoadVec[3]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 3:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(tri_p1,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(tri_p2,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                        awayRoadVec[2]->probability=\
-                            min(tri_p3,((awayRoadVec[2]->size())<( max_factor_drive_car*awayRoadVec[2]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 2:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(bi_p1,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(bi_p2,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 1:
-                        awayRoadVec[0]->probability=1;
-                    break;
-                }
 
-                Container* temp_road = searchRoadForCar(-1);
+                Container* temp_road = searchRoad(temp_car);
 
                 if (temp_road) // find road
                 {
@@ -859,45 +673,8 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                         < (cost_array[b->infoIdx] + b->endCross->lookUp(speed, b->roadId, destination).second);
                 });
 
-                switch(awayRoadVec.size())
-                {
-                    case 4:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(0.4,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(0.3,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                        awayRoadVec[2]->probability=\
-                            min(0.2,((awayRoadVec[2]->size())<( max_factor_drive_car*awayRoadVec[2]->capacity)?1.0:0.0));
-                        awayRoadVec[3]->probability=\
-                            min(0.1,((awayRoadVec[3]->size())<( max_factor_drive_car*awayRoadVec[3]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 3:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(0.7,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(0.2,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                        awayRoadVec[2]->probability=\
-                            min(0.1,((awayRoadVec[2]->size())<( max_factor_drive_car*awayRoadVec[2]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 2:
-                    {
-                        awayRoadVec[0]->probability=\
-                            min(0.8,((awayRoadVec[0]->size())<( max_factor_drive_car*awayRoadVec[0]->capacity)?1.0:0.0));
-                        awayRoadVec[1]->probability=\
-                            min(0.2,((awayRoadVec[1]->size())<( max_factor_drive_car*awayRoadVec[1]->capacity)?1.0:0.0));
-                    }
-                    break;
-                    case 1:
-                        awayRoadVec[0]->probability=1;
-                    break;
 
-                }
-
-                Container* temp_road = searchRoadForCar(-1);
+                Container* temp_road = searchRoad(temp_car);
 
                 //find road
                 if(temp_road)

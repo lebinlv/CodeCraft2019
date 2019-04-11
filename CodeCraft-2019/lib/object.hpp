@@ -147,13 +147,6 @@ class Container
         return size;
     }
 
-    /**
-     * @brief 寻找路径
-     * 
-     * @nitice 需要在道路上调用，传入一个car，之后会对car的route vector进行幅值
-     */
-    void searchRoad(CAR *car);
-
     // 获取第 pos 车道的 车辆vector 的引用, `pos~[0, channel]`
     inline container_t &getCarVec(int pos){ return carInChannel[pos]; }
     inline container_t &operator[](int pos) { return carInChannel[pos]; }
@@ -211,6 +204,17 @@ class Container
     inline void dispatchCarInContainer(){
         for(int i=0; i<channel; i++) dispatchCarInChannelFirst(i);
     }
+
+    /**
+     * @brief 寻找路径
+     * 
+     * @param 需要调度的车辆，是否是初始上路车辆
+     *  
+     * @nitice 需要在道路上调用，传入一个car，之后会对car的route vector进行幅值
+     * 
+     * @return 如果找到路返回该条路，如果没有找到，返回null；这个返回值主要是给发车寻路使用的，对于已经上路的车辆，只会返回nullptr
+     */
+    void searchRoad(CAR *car);
 };
 
 
@@ -278,6 +282,7 @@ struct CROSS
     // 路由表的索引@release： uint32_t    | speed 6bit(0~63) | removeRoadId 14bit(0~16383) | 目的crossId 12bit(0~4095) |
     // 路由表的索引@debug： uint32_t    speed*1e8 + removeRoadId*1e4 + 目的crossId
     map_type<uint32_t, routeInfo_t> routeTable;
+    routeInfo_t findNothing;
 
     /**
      * @brief 更新路由表的内部实现
@@ -318,6 +323,8 @@ struct CROSS
      * @return routeInfo_t&    `std::pair<Container*, float>` （<指向下一跳的指针, 预计总开销>）
      */
     inline routeInfo_t & lookUp(int car_speed, int current_road_id, int destination){
+        uint32_t key = ROUTEID(car_speed, current_road_id, destination);
+        if (routeTable.find(key) == routeTable.end()) return findNothing;
         return routeTable[ROUTEID(car_speed, current_road_id, destination)];
     }
 
@@ -346,13 +353,7 @@ struct CROSS
      */
     void dispatch(int global_time);
 
-    /**
-     * @brief 为车辆计算下一条路线
-     * 
-     * @param current_road_id 车辆当前所在道路id，如果是上路车辆，则current_road_id = -1
-     * @return Container* 下一条道路的指针
-     */
-    Container *searchRoadForCar(int current_road_id);
+    Container *searchRoad(CAR *pCar);
 };
 
 
