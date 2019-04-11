@@ -60,12 +60,12 @@
         {
             "label": "Simulate",
             "type": "shell",
-            "command": "python3",
+            "command": "${workspaceFolder}/tools/simulator.bin",
             "args": [
-                "${workspaceFolder}/tools/simulator.py",
                 "${workspaceFolder}/config/car.txt",
                 "${workspaceFolder}/config/road.txt",
                 "${workspaceFolder}/config/cross.txt",
+                "${workspaceFolder}/config/presetAnswer.txt",
                 "${workspaceFolder}/config/answer.txt"
             ],
             "problemMatcher": []
