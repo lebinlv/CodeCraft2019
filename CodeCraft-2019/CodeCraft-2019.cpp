@@ -2,6 +2,7 @@
 #include <chrono>   // speed test
 #include <sstream>
 #include <cstdio>
+#include <random>
 
 #include "lib/object.hpp"
 
@@ -208,23 +209,27 @@ carVec.push_back(pCar);
 
 cout << carVec.size() << endl;
 int count =0;
-
-
+int cross_count = crossVec.size();
+default_random_engine e;
+e.seed(0);
+bernoulli_distribution u(0.8);
 /* 系统运行 */
     int waitStateCarCountBK;
     while(totalCarCount)
     {
         global_time++;count=0;
 
+        for(auto cross:crossVec){
+            cross->disable = u(e);
+        }
+
         // 调度所有道路内的车辆 driveCarJustCurrentRoad()
         for(auto val:roadVec) { val->dispatchCarOnRoad(); }
 
         for (auto val : carVec)
-        {
-            if (val->state == CAR::WAIT)
-            {
-                count++;
-            }
+        { 
+            if (val->state == CAR::WAIT) 
+            { count++; }
         }
 
         waitStateCarCountBK = waitStateCarCount;
@@ -253,6 +258,8 @@ int count =0;
 
             waitStateCarCountBK = waitStateCarCount;
         }
+
+        for (auto val : carVec) { if (val->state == CAR::WAIT){ count++; } }
 
         // 优先、非优先均上路
         for(auto val:crossVec) { val->driveCarInitList(false, global_time);}

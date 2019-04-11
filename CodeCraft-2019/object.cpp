@@ -6,7 +6,7 @@
 *调参区间
 */
 static double max_factor = 0.8; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
-static double max_factor_drive_car = 0.025; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static double max_factor_drive_car = 0.5; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static int batch_size = 0;
 
 using namespace std;
@@ -61,6 +61,7 @@ int Container::push_back(CAR *pCar, int s2)
 
     // 逐车道遍历
     for (int i = 0; i < channel; i++) {
+
         // 如果当前车道为空
         if(carInChannel[i].empty()) {
             pCar->enterNewRoad(new_idx, i);
@@ -542,6 +543,7 @@ Container *CROSS::searchRoad(CAR* pCar)
 
 void CROSS::driveCarInitList(bool is_prior,int global_time)
 {
+    if(disable) return;
     if(pre_time != global_time){drive_count=0; pre_time=global_time;}
 
     if (is_prior) //如果is_prior是true，则只上路优先车辆
@@ -559,6 +561,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     Container *temp_road = temp_car->route.back();
                     if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
                     {
+                        temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                         if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS) //success then delete it from garage
                         {
                             drive_count++;
@@ -605,6 +608,7 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     Container *temp_road = temp_car->route.back();
                     if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
                     {
+                        temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                         if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS) //success then delete it from garage
                         {
                             drive_count++;
@@ -662,7 +666,7 @@ void CROSS::dispatch(int global_time)
                 current_road->pop();
                 current_road->dispatchCarInChannel(pCar->currentChannel);      //调度该车之前所在车道
                 current_road->startCross->driveCarInitList(true, global_time); //执行一次优先车辆上路
-                delete pCar;
+                //delete pCar;
                 pCar = current_road->top();
                 continue;
             }

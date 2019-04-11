@@ -261,6 +261,7 @@ struct CROSS
 {
     typedef std::pair<Container*, float> routeInfo_t;
     int id;
+    bool disable;
 
     int pre_time=-1;//用于发车的时间记忆
     
