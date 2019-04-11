@@ -159,7 +159,7 @@ class Container
      *         `Container::SUCCESS`: 成功加入；
      *         `others(>=0)`: 因等待车辆而无法进入，返回道路入口与等待车辆的距离
      */
-    int push_back(CAR *pCar);
+    int push_back(CAR *pCar, int s2);
 
     /**
      * @brief 获取最先行驶的车辆的指针
@@ -261,8 +261,7 @@ struct CROSS
 {
     typedef std::pair<Container*, float> routeInfo_t;
     int id;
-    
-    deque<CAR*>::iterator i;//用于记忆的发车标志
+
     int pre_time=-1;//用于发车的时间记忆
     
     // 记录CROSS总数
@@ -281,6 +280,7 @@ struct CROSS
     std::deque<CAR *> ordinaryCarGarage; // 普通车辆车库
 
   private:
+    int drive_count;
     // 路由表的索引@release： uint32_t    | speed 6bit(0~63) | removeRoadId 14bit(0~16383) | 目的crossId 12bit(0~4095) |
     // 路由表的索引@debug： uint32_t    speed*1e8 + removeRoadId*1e4 + 目的crossId
     map_type<uint32_t, routeInfo_t> routeTable;
@@ -346,6 +346,8 @@ struct CROSS
     * 第二个是全局时间
     */
     void driveCarInitList(bool is_prior, int global_time);
+    void drivePriorCarInGarage(int global_time, Container *road);
+    void driveAllCarInGarage(int global_time);
 
     /**
      * @brief 路口调度

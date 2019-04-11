@@ -9,16 +9,10 @@ using namespace std;
 
 int waitStateCarCount = 0;
 int totalCarCount = 0;
-/**
- * @key  `road_id`;
- * @value  value: `ROAD*`;
- */
+int start_car_count = 0;
+
 map_type<int, ROAD *> roadMap;
 
-/**
- * @key: `cross_id`;
- * @value: `CROSS*`
- */
 map_type<int, CROSS *> crossMap;
 
 ofstream fout;
@@ -40,6 +34,7 @@ int main(int argc, char *argv[])
      */
     vector<CROSS *> crossVec;
     vector<ROAD *> roadVec;
+    vector<CAR *> carVec;
 
     map_type<int, CAR*> presetCarMap;
 
@@ -123,6 +118,7 @@ int main(int argc, char *argv[])
 
   /* 读取车辆信息配置文件，构建`presetCarMap`，检测共有多少种车速，将车辆放入到对应的路口的车库中 */
     fptr = fopen(carPath.c_str(), "r");
+carVec.reserve(62000);
     if (fptr) {
         int car_id, from, to, speed, planTime, isPrior, isPreset;
         char line_buffer[MAXIMUM_LENGTH_PER_LINE];
@@ -135,6 +131,7 @@ int main(int argc, char *argv[])
                        &car_id, &from, &to, &speed, &planTime, &isPrior, &isPreset);
 
                 auto pCar = new CAR(car_id, from, to, speed, planTime, isPrior, isPreset);
+carVec.push_back(pCar);
                 crossMap[from]->garage.push_back(pCar);
                 speedDetectArray[speed] = true; //标记车速
                 if(isPreset) presetCarMap.insert(pair<int, CAR*>(car_id, pCar));
@@ -209,16 +206,26 @@ int main(int argc, char *argv[])
     }
 /*End of 打开输出文件*/
 
+cout << carVec.size() << endl;
+int count =0;
+
 
 /* 系统运行 */
     int waitStateCarCountBK;
     while(totalCarCount)
     {
-        global_time++;
-        cout << "time: "<<global_time << endl;
+        global_time++;count=0;
 
         // 调度所有道路内的车辆 driveCarJustCurrentRoad()
         for(auto val:roadVec) { val->dispatchCarOnRoad(); }
+
+        for (auto val : carVec)
+        {
+            if (val->state == CAR::WAIT)
+            {
+                count++;
+            }
+        }
 
         waitStateCarCountBK = waitStateCarCount;
 
@@ -232,7 +239,14 @@ int main(int argc, char *argv[])
 
             // 判断是否死锁
             if(waitStateCarCount == waitStateCarCountBK) {
-                cout << "dead lock" << endl;
+                cout << "dead lock " << waitStateCarCount << "; WaitCar " << count << ":Total Run Count" << start_car_count<<endl;
+                for(auto val:carVec){
+                    // if(val->state==CAR::WAIT){
+                    //     cout<<"id: "<<val->id<<"; Start: "<<val->startTime<< "; Idx: "<< val->currentIdx <<"; Route: ";
+                    //     for(auto route:val->route) cout << route->roadId << "; ";
+                    //     cout << endl;
+                    // }
+                }
                 fout.close();
                 return 0;
             };
@@ -242,6 +256,7 @@ int main(int argc, char *argv[])
 
         // 优先、非优先均上路
         for(auto val:crossVec) { val->driveCarInitList(false, global_time);}
+        cout << "time: " << global_time << " Can On:" << start_car_count<<endl;
     }
 /* 系统运行结束 */
 
