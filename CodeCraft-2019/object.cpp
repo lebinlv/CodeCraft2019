@@ -5,8 +5,8 @@
 /*
 *调参区间
 */
-static double max_factor = 0.8; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
-static double max_factor_drive_car = 0.5; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static double max_factor = 0.2; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
+static double max_factor_drive_car = 0.2; //用于道路容量计算的最大因子，也就是车数量>factor*容量，则初始概率为0
 static int batch_size = 0;
 
 using namespace std;
@@ -19,6 +19,9 @@ extern map_type<int, CROSS *> crossMap;
 extern int start_car_count;
 extern bool speedDetectArray[SPEED_DETECT_ARRAY_LENGTH];
 
+#ifdef __LOGGER__
+ofstream logger("program_car.txt");
+#endif
 
 inline void CAR::enterNewRoad(int newIdx, int newChannel)
 {
@@ -543,14 +546,12 @@ Container *CROSS::searchRoad(CAR* pCar)
 
 void CROSS::driveCarInitList(bool is_prior,int global_time)
 {
-    if(disable) return;
     if(pre_time != global_time){drive_count=0; pre_time=global_time;}
 
     if (is_prior) //如果is_prior是true，则只上路优先车辆
     {
         for (deque<CAR *>::iterator i = garage.begin(); i != garage.end();)
         {
-            if (drive_count > batch_size) return;
             CAR *temp_car = *i;
 
             // 如果计划时间不晚于当前时间 且 是优先车辆
@@ -559,21 +560,26 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                 if (temp_car->isPreset)
                 {
                     Container *temp_road = temp_car->route.back();
-                    if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
-                    {
+                    // if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
+                    // {
                         temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                         if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS) //success then delete it from garage
                         {
-                            drive_count++;
+                            #if __LOGGER__
+                            logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                            #endif
+                            //drive_count++;
                             start_car_count++;
                             temp_car->startTime = global_time;
                             i = garage.erase(i);
                             continue;
                         }
-                    }
+                    // }
                     ++i;
                     continue;
                 }
+
+                if (disable || drive_count > batch_size){++i; continue;}
 
                 Container* temp_road = searchRoad(temp_car);
                 if (temp_road) // find road
@@ -581,6 +587,9 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                     if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
                     {
+                        #if __LOGGER__
+                        logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                        #endif
                         drive_count++;
                         start_car_count++;
                         temp_car->startTime=global_time;
@@ -597,30 +606,33 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
     {
         for (deque<CAR*>::iterator i= garage.begin(); i!=garage.end();)
         {
-            if(drive_count>batch_size)return;
-
             CAR *temp_car = *i;
-
             if(temp_car->planTime <= global_time)
             {
                 if (temp_car->isPreset)
                 {
                     Container *temp_road = temp_car->route.back();
-                    if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
-                    {
+                    // if (temp_road->size() <= max_factor_drive_car * temp_road->capacity)
+                    // {
+
                         temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                         if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS) //success then delete it from garage
                         {
-                            drive_count++;
+                            //drive_count++;
+                            #if __LOGGER__
+                            logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset<<"; Id: "<<temp_car->id<<"; StartTime: "<<global_time<<"; CrossId: "<<id<<"; Road: "<<temp_road->roadId << endl;
+                            #endif
                             start_car_count++;
                             temp_car->startTime = global_time;
                             i = garage.erase(i);
                             continue;
                         }
-                    }
+                    // }
                     ++i;
                     continue;
                 }
+
+                if(disable || drive_count > batch_size) {++i; continue;}
 
                 Container* temp_road = searchRoad(temp_car);
                 if(temp_road)
@@ -628,6 +640,9 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
                     if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
                     {
+                        #if __LOGGER__
+                        logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset<<"; Id: "<<temp_car->id<<"; StartTime: "<<global_time<<"; CrossId: "<<id<<"; Road: "<<temp_road->roadId << endl;
+                        #endif
                         drive_count++;
                         start_car_count++;
                         temp_car->startTime=global_time;

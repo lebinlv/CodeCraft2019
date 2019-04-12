@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/home/virtual/Desktop/Global Path Planning/SDK/SDK_C++/CodeCraft-2019"
+CMAKE_SOURCE_DIR = /home/liber/Desktop/CodeCraft2019_32/CodeCraft-2019
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/home/virtual/Desktop/Global Path Planning/SDK/SDK_C++/build"
+CMAKE_BINARY_DIR = /home/liber/Desktop/CodeCraft2019_32/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/home/virtual/Desktop/Global Path Planning/SDK/SDK_C++/build/CMakeFiles" "/home/virtual/Desktop/Global Path Planning/SDK/SDK_C++/build/CMakeFiles/progress.marks"
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/liber/Desktop/CodeCraft2019_32/build/CMakeFiles /home/liber/Desktop/CodeCraft2019_32/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/home/virtual/Desktop/Global Path Planning/SDK/SDK_C++/build/CMakeFiles" 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/liber/Desktop/CodeCraft2019_32/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -150,32 +150,32 @@ CodeCraft-2019.cpp.s:
 	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/CodeCraft-2019.cpp.s
 .PHONY : CodeCraft-2019.cpp.s
 
-file_io.o: file_io.cpp.o
+object.o: object.cpp.o
 
-.PHONY : file_io.o
+.PHONY : object.o
 
 # target to build an object file
-file_io.cpp.o:
-	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/file_io.cpp.o
-.PHONY : file_io.cpp.o
+object.cpp.o:
+	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/object.cpp.o
+.PHONY : object.cpp.o
 
-file_io.i: file_io.cpp.i
+object.i: object.cpp.i
 
-.PHONY : file_io.i
+.PHONY : object.i
 
 # target to preprocess a source file
-file_io.cpp.i:
-	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/file_io.cpp.i
-.PHONY : file_io.cpp.i
+object.cpp.i:
+	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/object.cpp.i
+.PHONY : object.cpp.i
 
-file_io.s: file_io.cpp.s
+object.s: object.cpp.s
 
-.PHONY : file_io.s
+.PHONY : object.s
 
 # target to generate assembly for a file
-file_io.cpp.s:
-	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/file_io.cpp.s
-.PHONY : file_io.cpp.s
+object.cpp.s:
+	$(MAKE) -f CMakeFiles/CodeCraft-2019.dir/build.make CMakeFiles/CodeCraft-2019.dir/object.cpp.s
+.PHONY : object.cpp.s
 
 # Help Target
 help:
@@ -189,9 +189,9 @@ help:
 	@echo "... CodeCraft-2019.o"
 	@echo "... CodeCraft-2019.i"
 	@echo "... CodeCraft-2019.s"
-	@echo "... file_io.o"
-	@echo "... file_io.i"
-	@echo "... file_io.s"
+	@echo "... object.o"
+	@echo "... object.i"
+	@echo "... object.s"
 .PHONY : help
 
 

@@ -60,13 +60,13 @@
         {
             "label": "Simulate",
             "type": "shell",
-            "command": "${workspaceFolder}/tools/simulator.bin",
+            "command": "${workspaceFolder}/run_simulator.sh",
             "args": [
-                "${workspaceFolder}/config/car.txt",
-                "${workspaceFolder}/config/road.txt",
-                "${workspaceFolder}/config/cross.txt",
-                "${workspaceFolder}/config/presetAnswer.txt",
-                "${workspaceFolder}/config/answer.txt"
+                // "${workspaceFolder}/config/car.txt",
+                // "${workspaceFolder}/config/road.txt",
+                // "${workspaceFolder}/config/cross.txt",
+                // "${workspaceFolder}/config/presetAnswer.txt",
+                // "${workspaceFolder}/config/answer.txt"
             ],
             "problemMatcher": []
         },

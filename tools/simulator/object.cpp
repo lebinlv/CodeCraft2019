@@ -13,6 +13,10 @@ extern map_type<int, ROAD*> roadMap;
 extern map_type<int, CROSS *> crossMap;
 extern vector<CROSS *> crossVec;
 
+#if __LOGGER__
+ofstream logger("simulator_car.txt");
+#endif
+
 inline void CAR::enterNewRoad(int newIdx, int newChannel)
 {
     currentSpeed = nextSpeed;
@@ -368,6 +372,9 @@ void CROSS::driveAllCarInGarage(int global_time)
 
             if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS) 
             {
+                #if __LOGGER__
+                logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                #endif
                 temp_car->startTime = global_time;
                 i = priorGarage.erase(i); continue;
             }
@@ -380,13 +387,15 @@ void CROSS::driveAllCarInGarage(int global_time)
     {
         CAR *temp_car = *i;
         int speed = temp_car->speed;
-
         if(temp_car->answerTime <= global_time)
         {
             Container *temp_road = temp_car->route.front();
             temp_car->nextSpeed = min(speed, temp_road->maxSpeed);
             if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS) 
-            { 
+            {
+                #if __LOGGER__
+                logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset<<"; Id: "<<temp_car->id<<"; StartTime: "<<global_time<<"; CrossId: "<<id<<"; Road: "<<temp_road->roadId << endl;
+                #endif
                 temp_car->startTime = global_time;
                 i = ordinaryGarage.erase(i); continue;
             }
@@ -411,6 +420,9 @@ void CROSS::drivePriorCarInGarage(int global_time, Container *road)
 
                 if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS)
                 {
+                    #if __LOGGER__
+                    logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                    #endif
                     temp_car->startTime = global_time;
                     i = priorGarage.erase(i);
                     continue;
@@ -433,6 +445,9 @@ void CROSS::drivePriorCarInGarage(int global_time, Container *road)
 
                 if (temp_road->push_back(temp_car, temp_car->nextSpeed) == Container::SUCCESS)
                 {
+                    #if __LOGGER__
+                    logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                    #endif
                     temp_car->startTime = global_time;
                     i = priorGarage.erase(i);
                     continue;

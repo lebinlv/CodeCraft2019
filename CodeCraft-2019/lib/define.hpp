@@ -2,6 +2,7 @@
 #define _DEFINE_H_
 
 #define __DEBUG_MODE__ 1
+#define __LOGGER__ 1
 
 /* 程序限制相关 */
 

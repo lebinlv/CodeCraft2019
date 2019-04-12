@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     cout << "Begin" << endl;
     
     if(argc < 6){
-        cout << "please input args: carPath, roadPath, crossPath, presetAnswerPath, answerPath" << std::endl;
+        cout << "please input args: carPath, roadPath, crossPath, answerPath" << std::endl;
         exit(1);
     }
     
@@ -222,9 +222,9 @@ int main(int argc, char *argv[])
 /* 对车库内车辆排序 */
     for(auto val : crossVec){
         // 车辆上路的优先级比较函数，优先车辆优先级最高，其次考虑车辆id。优先级高的放在前面，id小的放在前面
-        sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
-            return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
-        });
+        // sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
+        //     return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
+        // });
         sort(val->priorGarage.begin(), val->priorGarage.end(), [](CAR *a, CAR *b) -> bool {
             return a->answerTime == b->answerTime ? a->id < b->id : a->answerTime < b->answerTime;
         });

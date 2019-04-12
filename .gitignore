@@ -31,3 +31,5 @@ config_train_1/answer.txt
 bin/CodeCraft-2019.exe
 *.bin
 *.ipch
+program_car.txt
+tools/simulator_car.txt

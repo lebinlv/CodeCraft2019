@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
      */
     vector<CROSS *> crossVec;
     vector<ROAD *> roadVec;
-    vector<CAR *> carVec;
+vector<CAR *> carVec;
 
     map_type<int, CAR*> presetCarMap;
 
@@ -207,12 +207,11 @@ carVec.push_back(pCar);
     }
 /*End of 打开输出文件*/
 
-cout << carVec.size() << endl;
-int count =0;
-int cross_count = crossVec.size();
-default_random_engine e;
-e.seed(0);
-bernoulli_distribution u(0.8);
+    int count =0;
+    default_random_engine e;
+    e.seed(0);
+    bernoulli_distribution u(0.89);
+
 /* 系统运行 */
     int waitStateCarCountBK;
     while(totalCarCount)
@@ -245,13 +244,7 @@ bernoulli_distribution u(0.8);
             // 判断是否死锁
             if(waitStateCarCount == waitStateCarCountBK) {
                 cout << "dead lock " << waitStateCarCount << "; WaitCar " << count << ":Total Run Count" << start_car_count<<endl;
-                for(auto val:carVec){
-                    // if(val->state==CAR::WAIT){
-                    //     cout<<"id: "<<val->id<<"; Start: "<<val->startTime<< "; Idx: "<< val->currentIdx <<"; Route: ";
-                    //     for(auto route:val->route) cout << route->roadId << "; ";
-                    //     cout << endl;
-                    // }
-                }
+
                 fout.close();
                 return 0;
             };
@@ -273,6 +266,7 @@ bernoulli_distribution u(0.8);
 /* free memory */
     for(auto val:crossVec){delete val;}
     for(auto val:roadVec){delete val;}
+    for(auto val:carVec){delete val;}
 /* End of free memory */
 
     auto __end_time = std::chrono::steady_clock::now();
