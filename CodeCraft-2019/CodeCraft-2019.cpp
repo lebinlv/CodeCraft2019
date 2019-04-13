@@ -119,19 +119,19 @@ vector<CAR *> carVec;
 
   /* 读取车辆信息配置文件，构建`presetCarMap`，检测共有多少种车速，将车辆放入到对应的路口的车库中 */
     fptr = fopen(carPath.c_str(), "r");
-carVec.reserve(62000);
-    if (fptr) {
-        int car_id, from, to, speed, planTime, isPrior, isPreset;
-        char line_buffer[MAXIMUM_LENGTH_PER_LINE];
-        for (int i = 0; i < SPEED_DETECT_ARRAY_LENGTH; i++) speedDetectArray[i] = false;
+carVec.reserve(70000);
+        if (fptr) {
+            int car_id, from, to, speed, planTime, isPrior, isPreset;
+            char line_buffer[MAXIMUM_LENGTH_PER_LINE];
+            for (int i = 0; i < SPEED_DETECT_ARRAY_LENGTH; i++) speedDetectArray[i] = false;
 
-        fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
-        while (fgets(line_buffer, 50, fptr)) {
-            //if(line_buffer[0] == '(') {
-                sscanf(line_buffer, "(%d, %d, %d, %d, %d, %d, %d)",
-                       &car_id, &from, &to, &speed, &planTime, &isPrior, &isPreset);
+            fgets(line_buffer, 50, fptr); // 似乎只有文件第一行为注释......
+            while (fgets(line_buffer, 50, fptr)) {
+                //if(line_buffer[0] == '(') {
+                    sscanf(line_buffer, "(%d, %d, %d, %d, %d, %d, %d)",
+                        &car_id, &from, &to, &speed, &planTime, &isPrior, &isPreset);
 
-                auto pCar = new CAR(car_id, from, to, speed, planTime, isPrior, isPreset);
+                    auto pCar = new CAR(car_id, from, to, speed, planTime, isPrior, isPreset);
 carVec.push_back(pCar);
                 crossMap[from]->garage.push_back(pCar);
                 speedDetectArray[speed] = true; //标记车速
@@ -147,7 +147,16 @@ carVec.push_back(pCar);
   /* End of read car configuration */
 
 
+/* 计算路由表,并对车库内车辆排序 */
+    graph.calculateCostMap();
+    for(auto val : crossVec) {val->updateRouteTable();}
+/* End of 计算路由表，并对车库内车辆排序 */
+
+
+
   /* 读取预置车辆的信息 */
+    vector<pair<int, float> > presetCarVec;
+    presetCarVec.reserve(512);
     ifstream fin(presetAnswerPath);
     if(fin) {
         int car_id, time, road_id, pre_cross_id;
@@ -166,12 +175,16 @@ carVec.push_back(pCar);
                 pCar = presetCarMap[car_id];
                 pCar->planTime = time;
                 pre_cross_id = pCar->from;
+                int cost = 0;
 
                 while(line_stream >> temp >> road_id) {
                     pContainer = roadMap[road_id]->getContainer(pre_cross_id).second;
                     pre_cross_id = pContainer->nextCrossId;
                     pCar->route.push_back(pContainer);
+                    cost += pContainer->length/min(pContainer->maxSpeed, pCar->speed);
                 }
+                float idealCost = crossMap[pCar->from]->lookUp(pCar->speed, 0, pCar->to).second;
+                presetCarVec.push_back(pair<int, float>(pCar->id, cost-idealCost));
                 reverse(pCar->route.begin(), pCar->route.end());
             //}
         }
@@ -179,22 +192,18 @@ carVec.push_back(pCar);
         cout << "can't open presetAnswer configuration file: " << presetAnswerPath << endl;
         exit(-1);
     }
+
+    sort(presetCarVec.begin(), presetCarVec.end(), [](pair<int, float> & a, pair<int, float> & b)->bool{return a.second > b.second;});
+    int modifyCount = presetCarVec.size()*0.1;
+    for(int i=0; i<modifyCount; i++) {
+        auto car = presetCarMap[presetCarVec[i].first];
+        car->route.clear();
+        car->isPreset = false;
+    }
   /* End of 读取预置车辆信息 */
 
 /* END of read configuration from file */
 
-
-/* 计算路由表,并对车库内车辆排序 */
-    graph.calculateCostMap();
-    for(auto val : crossVec){
-        val->updateRouteTable();
-
-        // 车辆上路的优先级比较函数，优先车辆优先级最高，其次考虑车辆id。优先级高的放在前面，id小的放在前面
-        // sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
-        //     return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
-        // });
-    }
-/* End of 计算路由表，并对车库内车辆排序 */
 
 
 /* 打开输出文件*/
@@ -224,6 +233,7 @@ carVec.push_back(pCar);
                 car->notFindRoadThisTime = false;
                 if(!car->isPreset && car->planTime < global_time)car->planTime=global_time;
             }
+
             sort(cross->garage.begin(), cross->garage.end(), [](CAR *a, CAR *b)->bool{
                 if(a->isPrior == b->isPrior){
                     if(a->planTime == b->planTime){

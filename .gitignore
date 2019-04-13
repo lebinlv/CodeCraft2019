@@ -15,6 +15,8 @@ config_train_2/
 2-map-training-1/
 2-map-training-2/
 .vscode/ipch/
+2-map-exam-1/
+2-map-exam-2/
 
 # file
 bin/CodeCraft-2019
@@ -31,5 +33,6 @@ config_train_1/answer.txt
 bin/CodeCraft-2019.exe
 *.bin
 *.ipch
+*.zip
 program_car.txt
 tools/simulator_car.txt
