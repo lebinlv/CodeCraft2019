@@ -579,12 +579,12 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     continue;
                 }
 
-                if (disable || drive_count > batch_size){++i; continue;}
+                if (disable || drive_count > batch_size || temp_car->notFindRoadThisTime){++i; continue;}
 
-                Container* temp_road = searchRoad(temp_car);
-                if (temp_road) // find road
+                Container* temp_road;
+                if(temp_car->getNewRoad)
                 {
-                    temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
+                    temp_road = temp_car->route.back();
                     if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
                     {
                         #if __LOGGER__
@@ -593,10 +593,33 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                         drive_count++;
                         start_car_count++;
                         temp_car->startTime=global_time;
-                        temp_car->route.push_back(temp_road);
+                        //temp_car->route.push_back(temp_road);
                         i = garage.erase(i);
                         continue;
                     }
+                }
+                else
+                {
+                    temp_road = searchRoad(temp_car);
+                    if (temp_road) // find road
+                    {
+                        temp_car->route.push_back(temp_road);
+                        temp_car->getNewRoad = true;
+                        temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
+                        if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
+                        {
+                            #if __LOGGER__
+                            logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                            #endif
+                            drive_count++;
+                            start_car_count++;
+                            temp_car->startTime=global_time;
+                            //temp_car->route.push_back(temp_road);
+                            i = garage.erase(i);
+                            continue;
+                        }
+                    }
+                    temp_car->notFindRoadThisTime = true;
                 }
             }
             ++i;
@@ -632,22 +655,46 @@ void CROSS::driveCarInitList(bool is_prior,int global_time)
                     continue;
                 }
 
-                if(disable || drive_count > batch_size) {++i; continue;}
+                if(disable || drive_count > batch_size || temp_car->notFindRoadThisTime) {++i; continue;}
 
-                Container* temp_road = searchRoad(temp_car);
-                if(temp_road)
+                Container* temp_road;
+                if(temp_car->getNewRoad)
                 {
-                    temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
+                    temp_road = temp_car->route.back();
                     if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
                     {
                         #if __LOGGER__
-                        logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset<<"; Id: "<<temp_car->id<<"; StartTime: "<<global_time<<"; CrossId: "<<id<<"; Road: "<<temp_road->roadId << endl;
+                        logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
                         #endif
                         drive_count++;
                         start_car_count++;
                         temp_car->startTime=global_time;
+                        //temp_car->route.push_back(temp_road);
+                        i = garage.erase(i);
+                        continue;
+                    }
+                }
+                else
+                {
+                    temp_road = searchRoad(temp_car);
+                    if (temp_road) // find road
+                    {
                         temp_car->route.push_back(temp_road);
-                        i = garage.erase(i); continue;
+                        temp_car->getNewRoad = true;
+                        temp_car->nextSpeed = min(temp_car->speed, temp_road->maxSpeed);
+                        if(temp_road->push_back(temp_car, temp_car->nextSpeed)==Container::SUCCESS)//success then delete it from garage
+                        {
+                            #if __LOGGER__
+                            logger<<"[Prior] "<< temp_car->isPrior<<"; [Preset] "<<temp_car->isPreset << "; Id: " << temp_car->id << "; StartTime: " << global_time << "; CrossId: " << id << "; Road: " << temp_road->roadId << endl;
+                            #endif
+                            drive_count++;
+                            start_car_count++;
+                            temp_car->startTime=global_time;
+                            //temp_car->route.push_back(temp_road);
+                            i = garage.erase(i);
+                            continue;
+                        }
+                        temp_car->notFindRoadThisTime = true;
                     }
                 }
             }

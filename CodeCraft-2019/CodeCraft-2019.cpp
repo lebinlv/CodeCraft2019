@@ -190,9 +190,9 @@ carVec.push_back(pCar);
         val->updateRouteTable();
 
         // 车辆上路的优先级比较函数，优先车辆优先级最高，其次考虑车辆id。优先级高的放在前面，id小的放在前面
-        sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
-            return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
-        });
+        // sort(val->garage.begin(), val->garage.end(), [](CAR *a, CAR *b) -> bool {
+        //     return a->isPrior == b->isPrior ? a->id < b->id : a->isPrior > b->isPrior;
+        // });
     }
 /* End of 计算路由表，并对车库内车辆排序 */
 
@@ -210,7 +210,7 @@ carVec.push_back(pCar);
     int count =0;
     default_random_engine e;
     e.seed(0);
-    bernoulli_distribution u(0.89);
+    bernoulli_distribution u(0.92);
 
 /* 系统运行 */
     int waitStateCarCountBK;
@@ -220,6 +220,19 @@ carVec.push_back(pCar);
 
         for(auto cross:crossVec){
             cross->disable = u(e);
+            for(auto car:cross->garage){
+                car->notFindRoadThisTime = false;
+                if(!car->isPreset && car->planTime < global_time)car->planTime=global_time;
+            }
+            sort(cross->garage.begin(), cross->garage.end(), [](CAR *a, CAR *b)->bool{
+                if(a->isPrior == b->isPrior){
+                    if(a->planTime == b->planTime){
+                        return a->id < b->id;
+                    }
+                    return a->planTime < b->planTime;
+                }
+                return a->isPrior > b->isPrior;
+            });
         }
 
         // 调度所有道路内的车辆 driveCarJustCurrentRoad()

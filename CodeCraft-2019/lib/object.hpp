@@ -37,6 +37,7 @@ struct CAR
 
     int nextSpeed, turnWeight;
     bool getNewRoad;
+    bool notFindRoadThisTime;
 
     // 车的运行状态
     CAR_STATE state;
